@@ -2,6 +2,7 @@ import discord
 from redbot.core import commands
 import aiohttp
 import json
+import datetime
 
 class CloneTracker(commands.Cog):
     """CloneTracker for Diablo 2: Resurrected"""
@@ -74,18 +75,21 @@ class CloneTracker(commands.Cog):
                                     embed.add_field(name=f"{region_name} - {ladder_type} - {hardcore_name}", value="No information available.")
                                 else:
                                     progress = data_json[0]['progress']
-                                    embed.add_field(name=f"{region_name} - {ladder_type} - {hardcore_name}", value=f"Progress: {progress}/6", inline=False)
+                                    timestamp = data_json[0]['timestamped']
+                                    dt = datetime.datetime.fromtimestamp(int(timestamp))
+                                    formatted_time = dt.strftime("%I:%M %p")
+                                    embed.add_field(name=f"{region_name} - {ladder_type} - {hardcore_name}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
                         except aiohttp.ClientError as e:
                             await ctx.send(f"An error occurred while fetching Uber Diablo information: {str(e)}")
         
         await ctx.send(embed=embed)
 
 async def get_region_code(region):
-    if region == "americas":
+    if region.lower() == "americas":
         return "1"
-    elif region == "europe":
+    elif region.lower() == "europe":
         return "2"
-    elif region == "asia":
+    elif region.lower() == "asia":
         return "3"
     else:
         return "0"
@@ -101,9 +105,9 @@ async def get_region_name(region_code):
         return "Unknown"
 
 async def get_ladder_code(ladder):
-    if ladder == "ladder":
+    if ladder.lower() == "ladder":
         return "1"
-    elif ladder == "non-ladder":
+    elif ladder.lower() == "non-ladder":
         return "2"
     else:
         return "0"
@@ -117,9 +121,9 @@ async def get_ladder_type(ladder_code):
         return "Unknown"
 
 async def get_hardcore_code(hardcore):
-    if hardcore == "hardcore":
+    if hardcore.lower() == "hardcore":
         return "1"
-    elif hardcore == "softcore":
+    elif hardcore.lower() == "softcore":
         return "2"
     else:
         return "0"
