@@ -12,7 +12,7 @@ class CloneTracker(commands.Cog):
 
     @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
-    async def clonetracker(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
+    async def clonetracker(self, ctx: commands.Context, region: str = "all", ladder: str = "all", hardcore: str = "all"):
         valid_regions = ["americas", "europe", "asia", "all"]
         valid_ladder = ["ladder", "non-ladder", "all"]
         valid_hardcore = ["hardcore", "softcore", "all"]
