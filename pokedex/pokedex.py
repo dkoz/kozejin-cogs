@@ -89,9 +89,11 @@ class Pokedex(commands.Cog):
 
             embed.add_field(name="Category", value=item_info.get("category", {}).get("name", "N/A"))
             embed.add_field(name="Cost", value=item_info.get("cost", "N/A"))
+            embed.add_field(name="Fling Power", value=item_info.get("fling_power", "N/A"))
+            embed.add_field(name="Fling Effect", value=item_info.get("fling_effect", "N/A"))
 
             flavor_text_entries = item_info.get("flavor_text_entries", [])
-            flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
+            flavor_text = next((entry["flavor_text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
             embed.add_field(name="Flavor Text", value=flavor_text or "N/A")
 
             create_info = item_info.get("held_by_pokemon", [])
