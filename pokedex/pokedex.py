@@ -87,43 +87,40 @@ class Pokedex(commands.Cog):
                 await ctx.send("No item found.")
                 return
 
-            embed = self.create_item_embed(item_info)
+            embed = discord.Embed()
+            embed.title = item_info["name"].capitalize()
+            if "category" in item_info:
+                embed.add_field(name="Category", value=item_info["category"]["name"])
+
+            if "cost" in item_info:
+                embed.add_field(name="Cost", value=item_info["cost"])
+
+            if "flavor_text_entries" in item_info:
+                flavor_text = ""
+                for entry in item_info["flavor_text_entries"]:
+                    if entry["language"]["name"] == "en":
+                        flavor_text = entry["text"]
+                        break
+                embed.add_field(name="Flavor Text", value=flavor_text)
+
+            # Add more fields as needed based on the item_info data
+
+            if "sprites" in item_info:
+                thumbnail_url = item_info["sprites"]["default"]
+                embed.set_thumbnail(url=thumbnail_url)
+
             await ctx.send(embed=embed)
 
     @cached(ttl=3600, cache=SimpleMemoryCache)
     async def get_item_info(self, item_id_or_name):
         try:
-            headers = {"content-type": "application/json"}
-
             async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://pokeapi.co/api/v2/item/{item_id_or_name.lower()}", headers=headers) as r:
-                    response = await r.json()
-
-            return response
+                async with session.get(f"https://pokeapi.co/api/v2/item/{item_id_or_name.lower()}") as r:
+                    if r.status == 200:
+                        item_data = await r.json()
+                        return item_data
+                    else:
+                        return None
 
         except:
             return None
-
-    def create_item_embed(self, item_info):
-        embed = discord.Embed()
-        embed.title = item_info["names"][0]["name"].capitalize()
-
-        if "sprites" in item_info:
-            thumbnail_url = item_info["sprites"]["default"]
-            embed.set_thumbnail(url=thumbnail_url)
-
-        if "category" in item_info:
-            embed.add_field(name="Category", value=item_info["category"]["name"])
-
-        if "cost" in item_info:
-            embed.add_field(name="Cost", value=item_info["cost"])
-
-        if "flavor_text_entries" in item_info:
-            flavor_text = ""
-            for entry in item_info["flavor_text_entries"]:
-                if entry["language"]["name"] == "en":
-                    flavor_text = entry["text"]
-                    break
-            embed.add_field(name="Flavor Text", value=flavor_text)
-
-        return embed
