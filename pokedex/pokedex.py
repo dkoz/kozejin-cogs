@@ -27,7 +27,7 @@ class Pokedex(commands.Cog):
 
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def pokemon(self, ctx, name_or_id):
+    async def pokedex(self, ctx, name_or_id):
         """Show Pokemon info"""
         async with ctx.typing():
             pokemon_info = await self.get_pokemon_info(name_or_id)
@@ -76,33 +76,27 @@ class Pokedex(commands.Cog):
 
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def items(self, ctx, item_id_or_name):
+    async def iteminfo(self, ctx, *, item_name):
         """Show item info"""
-        async with ctx.typing():
-            item_info = await self.get_item_info(item_id_or_name)
-            if item_info is None:
-                await ctx.send("No item found.")
-                return
-
-            embed = discord.Embed()
-            embed.title = item_info["name"].capitalize()
-
-            embed.add_field(name="Category", value=item_info.get("category", {}).get("name", "N/A"))
-            embed.add_field(name="Cost", value=item_info.get("cost", "N/A"))
-            embed.add_field(name="Fling Power", value=item_info.get("fling_power", "N/A"))
-            embed.add_field(name="Fling Effect", value=item_info.get("fling_effect", "N/A"))
-
-            flavor_text_entries = item_info.get("flavor_text_entries", [])
-            flavor_text = next((entry["flavor_text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
-            embed.add_field(name="Flavor Text", value=flavor_text or "N/A")
-
-            create_info = item_info.get("held_by_pokemon", [])
-            create_pokemon = [pokemon["pokemon"]["name"].capitalize() for pokemon in create_info]
-            create_string = ", ".join(create_pokemon) if create_pokemon else "N/A"
-            embed.add_field(name="Create Item Info", value=create_string)
-
-            thumbnail_url = item_info.get("sprites", {}).get("default")
-            if thumbnail_url:
-                embed.set_thumbnail(url=thumbnail_url)
-
+        item_name = item_name.lower().replace(" ", "-")
+        item_info = await self.get_item_info(item_name)
+        
+        if item_info is not None:
+            item_name = item_info["name"]
+            item_cost = item_info["cost"]
+            item_category = item_info["category"]["name"]
+            item_effect = item_info["effect_entries"][0]["effect"]
+            
+            flavor_text_entries = item_info["flavor_text_entries"]
+            flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
+            
+            embed = discord.Embed(title="Item Information", color=discord.Color.blue())
+            embed.add_field(name="Name", value=item_name.capitalize(), inline=False)
+            embed.add_field(name="Category", value=item_category.capitalize(), inline=False)
+            embed.add_field(name="Cost", value=str(item_cost), inline=False)
+            embed.add_field(name="Effect", value=item_effect, inline=False)
+            embed.add_field(name="Flavor Text", value=flavor_text, inline=False)
+            
             await ctx.send(embed=embed)
+        else:
+            await ctx.send("No item found.")
