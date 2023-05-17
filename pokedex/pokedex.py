@@ -76,3 +76,53 @@ class Pokedex(commands.Cog):
         embed.set_footer(text="Powered by Pokeapi")
 
         return embed
+
+    @commands.command()
+    @commands.bot_has_permissions(embed_links=True)
+    async def pokeitems(self, ctx, item_id_or_name):
+        """Show item info"""
+        async with ctx.typing():
+            item_info = await self.get_item_info(item_id_or_name)
+            if item_info is None:
+                await ctx.send("No item found.")
+                return
+
+            embed = self.create_item_embed(item_info)
+            await ctx.send(embed=embed)
+
+    @cached(ttl=3600, cache=SimpleMemoryCache)
+    async def get_item_info(self, item_id_or_name):
+        try:
+            headers = {"content-type": "application/json"}
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://pokeapi.co/api/v2/item/{item_id_or_name.lower()}", headers=headers) as r:
+                    response = await r.json()
+
+            return response
+
+        except:
+            return None
+
+    def create_item_embed(self, item_info):
+        embed = discord.Embed()
+        embed.title = item_info["name"].capitalize()
+
+        if "sprites" in item_info:
+            thumbnail_url = item_info["sprites"]["default"]
+            embed.set_thumbnail(url=thumbnail_url)
+
+        if "category" in item_info:
+            embed.add_field(name="Category", value=item_info["category"]["name"])
+
+        if "cost" in item_info:
+            embed.add_field(name="Cost", value=item_info["cost"])
+
+        if "flavor_text_entries" in item_info:
+            flavor_text = ""
+            for entry in item_info["flavor_text_entries"]:
+                if entry["language"]["name"] == "en":
+                    flavor_text = entry["text"]
+                    break
+            embed.add_field(name="Flavor Text", value=flavor_text)
+        return embed
