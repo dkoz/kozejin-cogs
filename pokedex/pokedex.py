@@ -77,7 +77,6 @@ class Pokedex(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
-        """Show item info"""
         item_name = item_name.lower().replace(" ", "-")
         item_info = await self.get_item_info(item_name)
         
@@ -90,7 +89,11 @@ class Pokedex(commands.Cog):
             flavor_text_entries = item_info["flavor_text_entries"]
             flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
             
+            item_sprites = item_info["sprites"]
+            item_thumbnail = item_sprites.get("default")  # Get the default sprite
+            
             embed = discord.Embed(title="Item Information", color=discord.Color.blue())
+            embed.set_thumbnail(url=item_thumbnail)
             embed.add_field(name="Name", value=item_name.capitalize(), inline=False)
             embed.add_field(name="Category", value=item_category.capitalize(), inline=False)
             embed.add_field(name="Cost", value=str(item_cost), inline=False)
