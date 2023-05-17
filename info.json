@@ -1,0 +1,12 @@
+{
+    "author": ["koz (KoZ#1337)"],
+    "install_msg": "Thanks for installing my repo! If you need support, feel free to add me on discord!",
+    "name": "kozejin-cogs",
+    "short": "Utility cogs for games by KoZ",
+    "description": "Just a collection of utility cogs for video games by KoZ.",
+    "tags": [
+        "utilities",
+        "fun",
+        "diablo"
+    ]
+}

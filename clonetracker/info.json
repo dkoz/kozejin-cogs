@@ -1,0 +1,15 @@
+{
+    "author": ["koz (KoZ#1337)"],
+    "install_msg": "Installed Clone/Uber Tracker for Diablo 2: Resurrected!",
+    "name": "CloneTracker",
+    "disabled": false,
+    "short": "Uber/Clone Tracker for Diablo 2: Resurrected",
+    "description": "Uber/Clone Tracker for Diablo 2: Resurrected",
+    "tags": [
+        "utilities",
+        "diablo",
+        "fun",
+        "games"
+    ],
+    "hidden": false
+}
