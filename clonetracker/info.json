@@ -1,5 +1,7 @@
 {
-    "author": ["koz (KoZ#1337)"],
+    "author": [
+        "KoZ(KoZ#1337)"
+    ],
     "install_msg": "Installed Clone/Uber Tracker for Diablo 2: Resurrected!",
     "name": "CloneTracker",
     "disabled": false,
