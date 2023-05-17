@@ -45,19 +45,19 @@ class CloneTracker(commands.Cog):
             hardcore_types = [hardcore.lower()]
 
         for region in regions:
-            region_code = await get_region_code(region)
-            region_name = await get_region_name(region_code)
+            region_code = await self.get_region_code(region)
+            region_name = await self.get_region_name(region_code)
             
             embed = discord.Embed(title=f"Uber Diablo Information - {region_name}", description="Uber Diablo is a boss in Diablo 2.", color=discord.Color.blue())
             embed.set_footer(text="Data provided by Diablo2.io")
 
             for ladder in ladders:
-                ladder_code = await get_ladder_code(ladder)
-                ladder_type = await get_ladder_type(ladder_code)
+                ladder_code = await self.get_ladder_code(ladder)
+                ladder_type = await self.get_ladder_type(ladder_code)
 
                 for hardcore_type in hardcore_types:
-                    hardcore_code = await get_hardcore_code(hardcore_type)
-                    hardcore_name = await get_hardcore_type(hardcore_code)
+                    hardcore_code = await self.get_hardcore_code(hardcore_type)
+                    hardcore_name = await self.get_hardcore_type(hardcore_code)
 
                     url = f"https://diablo2.io/dclone_api.php?region={region_code}&ladder={ladder_code}&hc={hardcore_code}"
 
@@ -79,7 +79,6 @@ class CloneTracker(commands.Cog):
                                     dt = datetime.datetime.fromtimestamp(int(timestamp))
                                     formatted_time = dt.strftime("%I:%M %p")
                                     embed.add_field(name=f"{ladder_type} - {hardcore_name}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
-
                         except aiohttp.ClientError as e:
                             await ctx.send(f"An error occurred while fetching Uber Diablo information: {str(e)}")
 
