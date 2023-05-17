@@ -106,7 +106,7 @@ class Pokedex(commands.Cog):
 
     def create_item_embed(self, item_info):
         embed = discord.Embed()
-        embed.title = item_info["name"].capitalize()
+        embed.title = item_info["names"][0]["name"].capitalize()
 
         if "sprites" in item_info:
             thumbnail_url = item_info["sprites"]["default"]
@@ -125,4 +125,5 @@ class Pokedex(commands.Cog):
                     flavor_text = entry["text"]
                     break
             embed.add_field(name="Flavor Text", value=flavor_text)
+
         return embed
