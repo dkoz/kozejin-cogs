@@ -4,11 +4,26 @@ from redbot.core import commands
 from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
-    """Show Pokemon info"""
-
     def __init__(self, bot):
         self.bot = bot
-        self.cache = SimpleMemoryCache()
+
+    async def fetch_data(self, url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    return None
+
+    async def get_pokemon_info(self, name_or_id):
+        base_url = "https://pokeapi.co/api/v2/pokemon-species/"
+        url = base_url + name_or_id.lower()
+        return await self.fetch_data(url)
+
+    async def get_item_info(self, item_id_or_name):
+        base_url = "https://pokeapi.co/api/v2/item/"
+        url = base_url + item_id_or_name.lower()
+        return await self.fetch_data(url)
 
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
@@ -17,69 +32,51 @@ class Pokedex(commands.Cog):
         async with ctx.typing():
             pokemon_info = await self.get_pokemon_info(name_or_id)
             if pokemon_info is None:
-                await ctx.send("No pokemon found.")
+                await ctx.send("No Pokemon found.")
                 return
 
-            embed = self.create_embed(pokemon_info)
+            evolution_url = pokemon_info["evolution_chain"]["url"]
+            evolution_data = await self.fetch_data(evolution_url)
+
+            if evolution_data is None:
+                await ctx.send("No Pokemon found.")
+                return
+
+            description = ""
+            for entry in pokemon_info["flavor_text_entries"]:
+                if entry["language"]["name"] == "en":
+                    description = entry["flavor_text"]
+                    break
+
+            height = str(pokemon_info["height"] / 10.0) + "m"
+            weight = str(pokemon_info["weight"] / 10.0) + "kg"
+
+            evolution_chain = []
+            chain = evolution_data["chain"]
+            while chain:
+                evolution_chain.append(chain["species"]["name"].capitalize())
+                chain = chain.get("evolves_to", [])
+                if chain:
+                    chain = chain[0]
+                else:
+                    break
+
+            evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
+
+            embed = discord.Embed()
+            embed.title = pokemon_info["name"].capitalize()
+            embed.description = description
+            embed.set_thumbnail(url=f"https://pokeapi.co/media/sprites/pokemon/{pokemon_info['id']}.png")
+            embed.add_field(name="Evolutions", value=evolution_string, inline=False)
+            embed.add_field(name="Height", value=height)
+            embed.add_field(name="Weight", value=weight)
+            embed.set_footer(text="Powered by PokeAPI")
+
             await ctx.send(embed=embed)
-
-    @cached(ttl=3600, cache=SimpleMemoryCache)
-    async def get_pokemon_info(self, name_or_id):
-        try:
-            headers = {"content-type": "application/json"}
-
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://pokeapi.co/api/v2/pokemon-species/{name_or_id.lower()}", headers=headers) as r1:
-                    response1 = await r1.json()
-
-                if "detail" in response1 and response1["detail"] == "Not found.":
-                    return None
-
-                evolution_url = response1["evolution_chain"]["url"]
-
-                async with session.get(f"https://pokeapi.co/api/v2/pokemon/{name_or_id.lower()}", headers=headers) as r2:
-                    response2 = await r2.json()
-
-                async with session.get(evolution_url, headers=headers) as r3:
-                    response3 = await r3.json()
-
-            return response1, response2, response3
-
-        except:
-            return None
-
-    def create_embed(self, pokemon_info):
-        response1, response2, response3 = pokemon_info
-
-        description = next(
-            (entry["flavor_text"] for entry in response1["flavor_text_entries"] if entry["language"]["name"] == "en"),
-            ""
-        )
-
-        height = f"{response2['height'] / 10.0}m"
-        weight = f"{response2['weight'] / 10.0}kg"
-
-        evolution_chain = response3["chain"]
-        evolutions = [evolution_chain["species"]["name"].capitalize()]
-        while evolution_chain["evolves_to"]:
-            evolution_chain = evolution_chain["evolves_to"][0]
-            evolutions.append(evolution_chain["species"]["name"].capitalize())
-        evolution_string = " -> ".join(evolutions) if len(evolutions) > 1 else "No evolutions"
-
-        embed = discord.Embed()
-        embed.title = response1["name"].capitalize()
-        embed.description = description
-        embed.set_thumbnail(url=response2["sprites"]["front_default"])
-        embed.add_field(name="Evolutions", value=evolution_string, inline=False)
-        embed.add_field(name="Height", value=height)
-        embed.add_field(name="Weight", value=weight)
-        embed.set_footer(text="Powered by Pokeapi")
-
-        return embed
 
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def pokeitems(self, ctx, item_id_or_name):
+    async def items(self, ctx, item_id_or_name):
         """Show item info"""
         async with ctx.typing():
             item_info = await self.get_item_info(item_id_or_name)
@@ -89,38 +86,21 @@ class Pokedex(commands.Cog):
 
             embed = discord.Embed()
             embed.title = item_info["name"].capitalize()
-            if "category" in item_info:
-                embed.add_field(name="Category", value=item_info["category"]["name"])
 
-            if "cost" in item_info:
-                embed.add_field(name="Cost", value=item_info["cost"])
+            embed.add_field(name="Category", value=item_info.get("category", {}).get("name", "N/A"))
+            embed.add_field(name="Cost", value=item_info.get("cost", "N/A"))
 
-            if "flavor_text_entries" in item_info:
-                flavor_text = ""
-                for entry in item_info["flavor_text_entries"]:
-                    if entry["language"]["name"] == "en":
-                        flavor_text = entry["text"]
-                        break
-                embed.add_field(name="Flavor Text", value=flavor_text)
+            flavor_text_entries = item_info.get("flavor_text_entries", [])
+            flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
+            embed.add_field(name="Flavor Text", value=flavor_text or "N/A")
 
-            # Add more fields as needed based on the item_info data
+            create_info = item_info.get("held_by_pokemon", [])
+            create_pokemon = [pokemon["pokemon"]["name"].capitalize() for pokemon in create_info]
+            create_string = ", ".join(create_pokemon) if create_pokemon else "N/A"
+            embed.add_field(name="Create Item Info", value=create_string)
 
-            if "sprites" in item_info:
-                thumbnail_url = item_info["sprites"]["default"]
+            thumbnail_url = item_info.get("sprites", {}).get("default")
+            if thumbnail_url:
                 embed.set_thumbnail(url=thumbnail_url)
 
             await ctx.send(embed=embed)
-
-    @cached(ttl=3600, cache=SimpleMemoryCache)
-    async def get_item_info(self, item_id_or_name):
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://pokeapi.co/api/v2/item/{item_id_or_name.lower()}") as r:
-                    if r.status == 200:
-                        item_data = await r.json()
-                        return item_data
-                    else:
-                        return None
-
-        except:
-            return None
