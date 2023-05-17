@@ -48,8 +48,8 @@ class Pokedex(commands.Cog):
                     description = entry["flavor_text"]
                     break
 
-            height = str(pokemon_info["height"] / 10.0) + "m"
-            weight = str(pokemon_info["weight"] / 10.0) + "kg"
+            height = str(pokemon_info.get("height", 0) / 10.0) + "m"
+            weight = str(pokemon_info.get("weight", 0) / 10.0) + "kg"
 
             evolution_chain = []
             chain = evolution_data["chain"]
