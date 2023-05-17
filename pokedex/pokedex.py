@@ -4,6 +4,8 @@ from redbot.core import commands
 from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
+    """Whos that pokemon?"""
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -20,6 +22,9 @@ class Pokedex(commands.Cog):
         url = base_url + name_or_id.lower()
         return await self.fetch_data(url)
 
+    async def get_pokemon_data(self, pokemon_url):
+        return await self.fetch_data(pokemon_url)
+
     async def get_item_info(self, item_id_or_name):
         base_url = "https://pokeapi.co/api/v2/item/"
         url = base_url + item_id_or_name.lower()
@@ -35,10 +40,8 @@ class Pokedex(commands.Cog):
                 await ctx.send("No Pokemon found.")
                 return
 
-            evolution_url = pokemon_info["evolution_chain"]["url"]
-            evolution_data = await self.fetch_data(evolution_url)
-
-            if evolution_data is None:
+            pokemon_data = await self.get_pokemon_data(pokemon_info["varieties"][0]["pokemon"]["url"])
+            if pokemon_data is None:
                 await ctx.send("No Pokemon found.")
                 return
 
@@ -48,26 +51,26 @@ class Pokedex(commands.Cog):
                     description = entry["flavor_text"]
                     break
 
-            height = str(pokemon_info.get("height", 0) / 10.0) + "m"
-            weight = str(pokemon_info.get("weight", 0) / 10.0) + "kg"
+            height = str(pokemon_data.get("height", 0) / 10.0) + "m"
+            weight = str(pokemon_data.get("weight", 0) / 10.0) + "kg"
 
             evolution_chain = []
-            chain = evolution_data["chain"]
+            chain = pokemon_info["evolution_chain"]
             while chain:
-                evolution_chain.append(chain["species"]["name"].capitalize())
-                chain = chain.get("evolves_to", [])
-                if chain:
-                    chain = chain[0]
+                species_name = chain["species"]["name"]
+                evolution_chain.append(species_name.capitalize())
+                if "evolves_to" in chain:
+                    chain = chain["evolves_to"][0]
                 else:
                     break
 
             evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
 
             embed = discord.Embed()
-            embed.title = pokemon_info["name"].capitalize()
+            embed.title = pokemon_data["name"]
             embed.description = description
-            embed.set_thumbnail(url=f"https://pokeapi.co/media/sprites/pokemon/{pokemon_info['id']}.png")
-            embed.add_field(name="Evolutions", value=evolution_string, inline=False)
+            embed.set_thumbnail(url=pokemon_data["sprites"]["front_default"])
+            embed.add_field(name="Evolution Chain", value=evolution_string, inline=False)
             embed.add_field(name="Height", value=height)
             embed.add_field(name="Weight", value=weight)
             embed.set_footer(text="Powered by PokeAPI")
@@ -77,6 +80,7 @@ class Pokedex(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
+        """Show Pokemon item info"""
         item_name = item_name.lower().replace(" ", "-")
         item_info = await self.get_item_info(item_name)
         
@@ -99,6 +103,7 @@ class Pokedex(commands.Cog):
             embed.add_field(name="Cost", value=str(item_cost), inline=False)
             embed.add_field(name="Effect", value=item_effect, inline=False)
             embed.add_field(name="Flavor Text", value=flavor_text, inline=False)
+            embed.set_footer(text="Powered by PokeAPI")
             
             await ctx.send(embed=embed)
         else:
