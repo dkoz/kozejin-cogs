@@ -55,14 +55,12 @@ class Pokedex(commands.Cog):
             weight = str(pokemon_data.get("weight", 0) / 10.0) + "kg"
 
             evolution_chain = []
-            chain = pokemon_info["evolution_chain"]
+            chain = pokemon_info.get("evolution_chain")
             while chain:
-                species_name = chain["species"]["name"]
-                evolution_chain.append(species_name.capitalize())
-                if "evolves_to" in chain:
-                    chain = chain["evolves_to"][0]
-                else:
-                    break
+                species_name = chain.get("species", {}).get("name")
+                if species_name:
+                    evolution_chain.append(species_name.capitalize())
+                chain = chain.get("evolves_to", [])[0] if chain.get("evolves_to") else None
 
             evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
 
