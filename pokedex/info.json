@@ -1,10 +1,10 @@
 {
-    "author": ["Kozejin (KoZ#1337)", "Jintaku"],
+    "author": ["Kozejin", "Jintaku"],
     "install_msg": "Use your pokedex to the max!",
     "name": "Pokedex",
     "short": "Display pokemon information",
     "description": "Displays information about Pokemon and Items using PokeAPI",
-    "tags" : ["utilities", "pokemon", "information", "pokeapi"],
+    "tags": ["utilities", "pokemon", "information", "pokeapi"],
     "hidden": false,
     "min_bot_version": "3.5.0",
     "end_user_data_statement": "This cog does not persistently store user data."
