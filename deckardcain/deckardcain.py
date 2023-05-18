@@ -46,7 +46,7 @@ class DeckardCain(commands.Cog):
                 response = await self.generate_response(question, api_key)
                 await ctx.send(response)
             else:
-                await ctx.send("API key is not set. Please ask the guild owner to use the setapikey command to set the API key for this guild.")
+                await ctx.send("API key not set! Use the command `setcainapikey`.")
         else:
             allowed_channel = self.bot.get_channel(allowed_channel_id)
             await ctx.send(f"The `askcain` command can only be used in {allowed_channel.mention}.")
@@ -58,6 +58,9 @@ class DeckardCain(commands.Cog):
         try:
             response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476)
             response_content = response.choices[0].text.strip()
+            
+            response_content = response_content.replace(question, "").strip()
+            
             return response_content
         except Exception as e:
             response_content = f"An error occurred: {str(e)}"
