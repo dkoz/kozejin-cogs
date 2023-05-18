@@ -1,0 +1,11 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Chat with Deckard Cain on OpenAI!",
+    "name": "DeckardCain",
+    "short": "Deckard Cain cog built on OpenAI",
+    "description": "Deckard Cain cog built on OpenAI",
+    "tags": ["utility", "chatgpt", "openai", "deckard", "cain"],
+    "requirements": ["openai", "asyncio"],
+    "hidden": false,
+    "min_bot_version": "3.5.0",
+}
