@@ -54,13 +54,10 @@ class DeckardCain(commands.Cog):
     async def generate_response(self, question, api_key):
         openai.api_key = api_key
 
-        prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question
+        prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question + " "
         try:
             response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476)
             response_content = response.choices[0].text.strip()
-            
-            response_content = response_content.replace(question, "").strip()
-            
             return response_content
         except Exception as e:
             response_content = f"An error occurred: {str(e)}"
