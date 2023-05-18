@@ -51,13 +51,17 @@ class DeckardCain(commands.Cog):
             allowed_channel = self.bot.get_channel(allowed_channel_id)
             await ctx.send(f"The `askcain` command can only be used in {allowed_channel.mention}.")
 
+
     async def generate_response(self, question, api_key):
         openai.api_key = api_key
 
         prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question + " "
         try:
-            response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476)
+            response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476, temperature=0.5)
             response_content = response.choices[0].text.strip()
+
+            response_content = "\n" + response_content
+
             return response_content
         except Exception as e:
             response_content = f"An error occurred: {str(e)}"
