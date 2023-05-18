@@ -5,7 +5,9 @@ import json
 import datetime
 
 class CloneTracker(commands.Cog):
-    """CloneTracker for Diablo 2: Resurrected"""
+    """Diablo Clone/Uber Diablo Tracker for Diablo 2: Resurrected"""
+
+    __version__ = "1.0.0"
 
     def __init__(self, bot):
         self.bot = bot
@@ -13,6 +15,7 @@ class CloneTracker(commands.Cog):
     @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
     async def clonetracker(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
+        """Search for diablo on all regions"""
         valid_regions = ["americas", "europe", "asia", "all"]
         valid_ladder = ["ladder", "non-ladder", "all"]
         valid_hardcore = ["hardcore", "softcore", "all"]

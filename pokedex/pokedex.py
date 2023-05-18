@@ -5,6 +5,8 @@ from redbot.core import commands
 class Pokedex(commands.Cog):
     """Whos that pokemon?"""
 
+    __version__ = "1.1.2"
+
     def __init__(self, bot):
         self.bot = bot
 
