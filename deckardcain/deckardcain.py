@@ -56,7 +56,7 @@ class DeckardCain(commands.Cog):
 
         prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question
         try:
-            response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt)
+            response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476)
             response_content = response.choices[0].text.strip()
             return response_content
         except Exception as e:
