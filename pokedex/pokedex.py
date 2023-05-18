@@ -29,6 +29,14 @@ class Pokedex(commands.Cog):
         url = base_url + item_id_or_name.lower()
         return await self.fetch_data(url)
 
+    async def fetch_evolution_data(self, evolution_url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(str(evolution_url)) as r3:
+                if r3.status == 200:
+                    return await r3.json()
+                else:
+                    return None
+
     @commands.command()
     @commands.bot_has_permissions(embed_links=True)
     async def pokedex(self, ctx, name_or_id):
@@ -54,15 +62,14 @@ class Pokedex(commands.Cog):
             weight = str(pokemon_data.get("weight", 0) / 10.0) + "kg"
 
             evolution_chain = []
-            chain = pokemon_info.get("evolves_from_species")
+            chain = pokemon_info.get("evolution_chain")
             while chain:
-                species_name = chain.get("name")
+                species_name = chain.get("species", {}).get("name")
                 if species_name:
-                    evolution_chain.insert(0, species_name.capitalize())
-                chain = chain.get("evolves_from_species")
+                    evolution_chain.append(species_name.capitalize())
+                chain = chain.get("evolves_to", [])[0] if chain.get("evolves_to") else None
 
-            evolution_chain.append(pokemon_info["name"].capitalize())
-            evolution_string = " -> ".join(evolution_chain) if len(evolution_chain) > 1 else "No evolutions"
+            evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
 
             embed = discord.Embed()
             embed.title = pokemon_data["name"].capitalize()
