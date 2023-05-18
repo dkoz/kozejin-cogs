@@ -38,7 +38,6 @@ class DeckardCain(commands.Cog):
 
             if api_key:
                 response = await self.generate_response(question, api_key)
-                await ctx.message.delete()  # Delete the user's command message
                 await ctx.send(response)
             else:
                 await ctx.send("API key is not set. Please ask the guild owner to use the setapikey command to set the API key for this guild.")
