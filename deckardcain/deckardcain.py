@@ -22,13 +22,15 @@ class DeckardCain(commands.Cog):
         await ctx.send("API key has been set successfully.")
 
     @commands.command()
-    @commands.check_any(commands.is_owner(), commands.has_permissions(administrator=True))
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def setcainchannel(self, ctx, channel: discord.TextChannel):
         """Restricts `askcain` to a specified channel"""
         await self.config.guild(ctx.guild).allowed_channel.set(channel.id)
         await ctx.send(f"The channel '{channel.name}' has been set as the allowed channel for the 'askcain' command.")
 
     @commands.command()
+    @commands.guild_only()
     async def askcain(self, ctx, *, question):
         """Chat with Deckard Cain(ChatGPT)"""
         allowed_channel_id = await self.config.guild(ctx.guild).allowed_channel()
