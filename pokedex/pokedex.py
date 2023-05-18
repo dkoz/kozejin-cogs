@@ -54,14 +54,15 @@ class Pokedex(commands.Cog):
             weight = str(pokemon_data.get("weight", 0) / 10.0) + "kg"
 
             evolution_chain = []
-            chain = pokemon_info.get("evolution_chain")
+            chain = pokemon_info.get("evolves_from_species")
             while chain:
-                species_name = chain.get("species", {}).get("name")
+                species_name = chain.get("name")
                 if species_name:
-                    evolution_chain.append(species_name.capitalize())
-                chain = chain.get("evolves_to", [])[0] if chain.get("evolves_to") else None
+                    evolution_chain.insert(0, species_name.capitalize())
+                chain = chain.get("evolves_from_species")
 
-            evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
+            evolution_chain.append(pokemon_info["name"].capitalize())
+            evolution_string = " -> ".join(evolution_chain) if len(evolution_chain) > 1 else "No evolutions"
 
             embed = discord.Embed()
             embed.title = pokemon_data["name"].capitalize()
