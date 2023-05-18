@@ -32,6 +32,16 @@ class Pokedex(commands.Cog):
         url = base_url + item_id_or_name.lower()
         return await self.fetch_data(url)
 
+    async def get_pokemon_moves(self, name_or_id):
+        base_url = "https://pokeapi.co/api/v2/move/"
+        url = base_url + name_or_id.lower()
+        moves_data = await self.cached_fetch_data(url)
+        if moves_data is not None:
+            move_list = [move["move"]["name"] for move in moves_data["moves"]]
+            return move_list
+        else:
+            return None
+
     async def get_evolution_chain(self, evolution_url):
         async with aiohttp.ClientSession() as session:
             async with session.get(evolution_url) as response:
@@ -129,14 +139,66 @@ class Pokedex(commands.Cog):
         else:
             await ctx.send("No item found.")
 
+    @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command(pokedex, "pokemon")
-    async def pokedex_pokemon(self, ctx, name_or_id):
-        """Show Pokemon info (hybrid)"""
-        await self.pokemon(ctx, name_or_id)
+    async def moves(self, ctx, name_or_id):
+        """Show Pokemon moveset"""
+        async with ctx.typing():
+            move_list = await self.get_pokemon_moves(name_or_id)
+            if move_list is None:
+                await ctx.send("No Pokemon moveset found.")
+                return
+
+            move_details = []
+            for move_name in move_list:
+                move_info = await self.get_move_info(move_name)
+                if move_info is not None:
+                    move_details.append(move_info)
+
+            if not move_details:
+                await ctx.send("No moves found for the specified Pokemon.")
+                return
+
+            embed = discord.Embed(title="Pokemon Moveset", color=discord.Color.blue())
+            for move_info in move_details:
+                move_name = move_info["name"].capitalize()
+                move_type = move_info["type"]["name"].capitalize()
+                move_power = move_info.get("power", "-")
+                move_pp = move_info.get("pp", "-")
+                move_accuracy = move_info.get("accuracy", "-")
+
+                move_description = ""
+                for entry in move_info["flavor_text_entries"]:
+                    if entry["language"]["name"] == "en":
+                        move_description = entry["flavor_text"]
+                        break
+
+                embed.add_field(name="Move Name", value=move_name, inline=False)
+                embed.add_field(name="Type", value=move_type, inline=True)
+                embed.add_field(name="Power", value=move_power, inline=True)
+                embed.add_field(name="PP", value=move_pp, inline=True)
+                embed.add_field(name="Accuracy", value=move_accuracy, inline=True)
+                embed.add_field(name="Description", value=move_description, inline=False)
+                embed.add_field(name="\u200b", value="\u200b", inline=False)  # Empty field for spacing
+
+            embed.set_footer(text="Powered by PokeAPI")
+
+            await ctx.send(embed=embed)
 
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_command(pokedex, "iteminfo")
     async def pokedex_iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info (hybrid)"""
         await self.iteminfo(ctx, item_name)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command(pokedex, "moves")
+    async def pokedex_moves(self, ctx, name_or_id):
+        """Show Pokemon moveset (hybrid)"""
+        await self.moves(ctx, name_or_id)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command(pokedex, "pokemon")
+    async def pokedex_pokemon(self, ctx, name_or_id):
+        """Show Pokemon info (hybrid)"""
+        await self.pokemon(ctx, name_or_id)
