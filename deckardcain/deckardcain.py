@@ -6,7 +6,7 @@ import asyncio
 class DeckardCain(commands.Cog):
     """Deckard Cain as ChatGPT"""
 
-    __version__ = "1.0.3"
+    __version__ = "1.0.4"
 
     def __init__(self, bot):
         self.bot = bot
@@ -36,7 +36,7 @@ class DeckardCain(commands.Cog):
     @commands.command()
     @commands.guild_only()
     async def askcain(self, ctx, *, question):
-        """Chat with Deckard Cain(ChatGPT)"""
+        """Chat with Deckard Cain (ChatGPT)"""
         allowed_channel_id = await self.config.guild(ctx.guild).allowed_channel()
 
         if allowed_channel_id is None or ctx.channel.id == allowed_channel_id:
@@ -57,7 +57,7 @@ class DeckardCain(commands.Cog):
         prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question
         try:
             response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt)
-            response_content = response["choices"][0]["text"].strip()
+            response_content = response.choices[0].text.strip()
             return response_content
         except Exception as e:
             response_content = f"An error occurred: {str(e)}"
