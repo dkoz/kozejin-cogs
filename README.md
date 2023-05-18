@@ -8,13 +8,19 @@
 *[p] is your prefix*
 
 Make sure the downloader cog is loaded.
-`[p]load downloader`
+```
+[p]load downloader
+```
 
 Next, add my repository to your bot.  
-`[p]repo add kozejin-cogs https://github.com/dkoz/kozejin-cogs`
+```
+[p]repo add kozejin-cogs https://github.com/dkoz/kozejin-cogs
+```
 
 Now install the cog you want to use.
-`[p]cog install kozejin-cogs <cog name>`
+```
+[p]cog install kozejin-cogs <cog name>
+```
 
 # My Cogs
 
