@@ -36,7 +36,7 @@ class Pokedex(commands.Cog):
         base_url = "https://pokeapi.co/api/v2/move/"
         url = base_url + name_or_id.lower()
         moves_data = await self.cached_fetch_data(url)
-        if moves_data is not None:
+        if moves_data is not None and "moves" in moves_data:
             move_list = [move["move"]["name"] for move in moves_data["moves"]]
             return move_list
         else:
