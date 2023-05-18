@@ -1,6 +1,7 @@
 import aiohttp
 import discord
 from redbot.core import commands
+from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
     """Look up information on Pokemon and game items"""
@@ -39,9 +40,18 @@ class Pokedex(commands.Cog):
                 else:
                     return None
 
-    @commands.hybrid_command()
+    @cached(ttl=3600, cache=SimpleMemoryCache)
+    async def cached_fetch_data(self, url):
+        return await self.fetch_data(url)
+
+    @commands.group()
+    async def pokedex(self, ctx):
+        """Pokedex commands"""
+        pass
+
+    @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def pokedex(self, ctx, name_or_id):
+    async def pokemon(self, ctx, name_or_id):
         """Show Pokemon info"""
         async with ctx.typing():
             pokemon_info = await self.get_pokemon_info(name_or_id)
@@ -85,25 +95,27 @@ class Pokedex(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @commands.hybrid_command()
+    @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info"""
         item_name = item_name.lower().replace(" ", "-")
         item_info = await self.get_item_info(item_name)
-        
+
         if item_info is not None:
             item_name = item_info["name"]
             item_cost = item_info["cost"]
             item_category = item_info["category"]["name"]
             item_effect = item_info["effect_entries"][0]["effect"]
-            
+
             flavor_text_entries = item_info["flavor_text_entries"]
-            flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
-            
+            flavor_text = next(
+                (entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), ""
+            )
+
             item_sprites = item_info["sprites"]
             item_thumbnail = item_sprites.get("default")
-            
+
             embed = discord.Embed(title="Item Information", color=discord.Color.blue())
             embed.set_thumbnail(url=item_thumbnail)
             embed.add_field(name="Name", value=item_name.capitalize(), inline=False)
@@ -112,7 +124,19 @@ class Pokedex(commands.Cog):
             embed.add_field(name="Effect", value=item_effect, inline=False)
             embed.add_field(name="Flavor Text", value=flavor_text, inline=False)
             embed.set_footer(text="Powered by PokeAPI")
-            
+
             await ctx.send(embed=embed)
         else:
             await ctx.send("No item found.")
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command(pokedex, "pokemon")
+    async def pokedex_pokemon(self, ctx, name_or_id):
+        """Show Pokemon info (hybrid)"""
+        await self.pokemon(ctx, name_or_id)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command(pokedex, "iteminfo")
+    async def pokedex_iteminfo(self, ctx, *, item_name):
+        """Show Pokemon item info (hybrid)"""
+        await self.iteminfo(ctx, item_name)
