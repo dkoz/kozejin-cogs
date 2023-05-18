@@ -51,7 +51,7 @@ class CloneTracker(commands.Cog):
             region_code = await self.get_region_code(region)
             region_name = await self.get_region_name(region_code)
             
-            embed = discord.Embed(title=f"Uber Diablo Information - {region_name}", description="Uber Diablo is a boss in Diablo 2.", color=discord.Color.blue())
+            embed = discord.Embed(title=f"Uber Diablo Information - {region_name}", description="Tracking data for Uber Diablo", color=discord.Color.blue())
             embed.set_footer(text="Data provided by Diablo2.io")
 
             for ladder in ladders:

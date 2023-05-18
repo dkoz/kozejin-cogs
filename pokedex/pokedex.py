@@ -3,7 +3,7 @@ import discord
 from redbot.core import commands
 
 class Pokedex(commands.Cog):
-    """Whos that pokemon?"""
+    """Look up information on Pokemon and game items"""
 
     __version__ = "1.1.2"
 
@@ -102,7 +102,7 @@ class Pokedex(commands.Cog):
             flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
             
             item_sprites = item_info["sprites"]
-            item_thumbnail = item_sprites.get("default")  # Get the default sprite
+            item_thumbnail = item_sprites.get("default")
             
             embed = discord.Embed(title="Item Information", color=discord.Color.blue())
             embed.set_thumbnail(url=item_thumbnail)
