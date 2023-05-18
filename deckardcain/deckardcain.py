@@ -24,10 +24,14 @@ class DeckardCain(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def setcainchannel(self, ctx, channel: discord.TextChannel):
+    async def setcainchannel(self, ctx, channel: discord.TextChannel = None):
         """Restricts `askcain` to a specified channel"""
-        await self.config.guild(ctx.guild).allowed_channel.set(channel.id)
-        await ctx.send(f"The channel '{channel.name}' has been set as the allowed channel for the 'askcain' command.")
+        if channel is None:
+            await self.config.guild(ctx.guild).allowed_channel.clear()
+            await ctx.send("The channel restriction for `Deckard Cain` has been removed.")
+        else:
+            await self.config.guild(ctx.guild).allowed_channel.set(channel.id)
+            await ctx.send(f"The channel '{channel.name}' has been set as the allowed channel for the `askcain` command.")
 
     @commands.command()
     @commands.guild_only()
@@ -45,7 +49,7 @@ class DeckardCain(commands.Cog):
                 await ctx.send("API key is not set. Please ask the guild owner to use the setapikey command to set the API key for this guild.")
         else:
             allowed_channel = self.bot.get_channel(allowed_channel_id)
-            await ctx.send(f"The 'askcain' command can only be used in {allowed_channel.mention}.")
+            await ctx.send(f"The `askcain` command can only be used in {allowed_channel.mention}.")
 
     async def generate_response(self, question, api_key):
         openai.api_key = api_key
@@ -54,7 +58,7 @@ class DeckardCain(commands.Cog):
         try:
             response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt)
             response_content = response["choices"][0]["text"].strip()
+            return response_content
         except Exception as e:
             response_content = f"An error occurred: {str(e)}"
-
-        return response_content
+            return response_content
