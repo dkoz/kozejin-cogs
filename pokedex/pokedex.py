@@ -39,7 +39,7 @@ class Pokedex(commands.Cog):
                 else:
                     return None
 
-    @commands.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
     async def pokedex(self, ctx, name_or_id):
         """Show Pokemon info"""
@@ -85,7 +85,7 @@ class Pokedex(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info"""
