@@ -1,7 +1,6 @@
 import aiohttp
 import discord
 from redbot.core import commands
-#from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
     """Whos that pokemon?"""
@@ -65,7 +64,7 @@ class Pokedex(commands.Cog):
             evolution_string = " -> ".join(evolution_chain) if evolution_chain else "No evolutions"
 
             embed = discord.Embed()
-            embed.title = pokemon_data["name"]
+            embed.title = pokemon_data["name"].capitalize()
             embed.description = description
             embed.set_thumbnail(url=pokemon_data["sprites"]["front_default"])
             embed.add_field(name="Evolution Chain", value=evolution_string, inline=False)
