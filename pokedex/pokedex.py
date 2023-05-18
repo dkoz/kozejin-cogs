@@ -186,19 +186,19 @@ class Pokedex(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command(pokedex, "iteminfo")
+    @commands.hybrid_command("iteminfo")
     async def pokedex_iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info (hybrid)"""
         await self.iteminfo(ctx, item_name)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command(pokedex, "moves")
+    @commands.hybrid_command("moves")
     async def pokedex_moves(self, ctx, name_or_id):
         """Show Pokemon moveset (hybrid)"""
         await self.moves(ctx, name_or_id)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command(pokedex, "pokemon")
+    @commands.hybrid_command("pokemon")
     async def pokedex_pokemon(self, ctx, name_or_id):
         """Show Pokemon info (hybrid)"""
         await self.pokemon(ctx, name_or_id)
