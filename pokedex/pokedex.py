@@ -1,7 +1,7 @@
 import aiohttp
 import discord
 from redbot.core import commands
-from aiocache import cached, SimpleMemoryCache
+#from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
     """Whos that pokemon?"""
