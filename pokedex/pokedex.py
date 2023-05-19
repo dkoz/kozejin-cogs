@@ -136,8 +136,9 @@ class Pokedex(commands.Cog):
 
     @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def moves(self, ctx, move_name):
+    async def moves(self, ctx, *, move_name):
         """Show Pokemon moveset"""
+        move_name = move_name.lower().replace(" ", "-")
         async with ctx.typing():
             move_info = await self.get_move_info(move_name)
             if move_info is None:
