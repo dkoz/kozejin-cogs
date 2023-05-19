@@ -118,7 +118,7 @@ class Pokedex(commands.Cog):
 
             embed = discord.Embed(title="Item Information", color=discord.Color.blue())
             embed.set_thumbnail(url=item_thumbnail)
-            embed.add_field(name="Name", value=item_name.capitalize(), inline=False)
+            embed.add_field(name="Name", value=item_name.replace("-", " ").capitalize(), inline=False)
             embed.add_field(name="Category", value=item_category.capitalize(), inline=False)
             embed.add_field(name="Cost", value=str(item_cost), inline=False)
             embed.add_field(name="Effect", value=item_effect, inline=False)
@@ -140,7 +140,7 @@ class Pokedex(commands.Cog):
                 await ctx.send("No move found.")
                 return
 
-            move_name = move_info["name"].capitalize()
+            move_name = move_info["name"].replace("-", " ").capitalize()
             move_type = move_info["type"]["name"].capitalize()
             move_power = move_info.get("power", "-")
             move_pp = move_info.get("pp", "-")
