@@ -1,11 +1,12 @@
 import aiohttp
 import discord
 from redbot.core import commands
+from aiocache import cached, SimpleMemoryCache
 
 class Pokedex(commands.Cog):
     """Look up information on Pokemon and game items"""
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.4"
 
     def __init__(self, bot):
         self.bot = bot
@@ -31,6 +32,11 @@ class Pokedex(commands.Cog):
         url = base_url + item_id_or_name.lower()
         return await self.fetch_data(url)
 
+    async def get_move_info(self, move_name):
+        base_url = "https://pokeapi.co/api/v2/move/"
+        url = base_url + move_name.lower()
+        return await self.fetch_data(url)
+
     async def get_evolution_chain(self, evolution_url):
         async with aiohttp.ClientSession() as session:
             async with session.get(evolution_url) as response:
@@ -39,9 +45,18 @@ class Pokedex(commands.Cog):
                 else:
                     return None
 
-    @commands.hybrid_command()
+    @cached(ttl=3600, cache=SimpleMemoryCache)
+    async def cached_fetch_data(self, url):
+        return await self.fetch_data(url)
+
+    @commands.group()
+    async def pokedex(self, ctx):
+        """Pokedex commands"""
+        pass
+
+    @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
-    async def pokedex(self, ctx, name_or_id):
+    async def pokemon(self, ctx, name_or_id):
         """Show Pokemon info"""
         async with ctx.typing():
             pokemon_info = await self.get_pokemon_info(name_or_id)
@@ -85,25 +100,27 @@ class Pokedex(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @commands.hybrid_command()
+    @pokedex.command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info"""
         item_name = item_name.lower().replace(" ", "-")
         item_info = await self.get_item_info(item_name)
-        
+
         if item_info is not None:
             item_name = item_info["name"]
             item_cost = item_info["cost"]
             item_category = item_info["category"]["name"]
             item_effect = item_info["effect_entries"][0]["effect"]
-            
+
             flavor_text_entries = item_info["flavor_text_entries"]
-            flavor_text = next((entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), "")
-            
+            flavor_text = next(
+                (entry["text"] for entry in flavor_text_entries if entry["language"]["name"] == "en"), ""
+            )
+
             item_sprites = item_info["sprites"]
             item_thumbnail = item_sprites.get("default")
-            
+
             embed = discord.Embed(title="Item Information", color=discord.Color.blue())
             embed.set_thumbnail(url=item_thumbnail)
             embed.add_field(name="Name", value=item_name.capitalize(), inline=False)
@@ -112,7 +129,54 @@ class Pokedex(commands.Cog):
             embed.add_field(name="Effect", value=item_effect, inline=False)
             embed.add_field(name="Flavor Text", value=flavor_text, inline=False)
             embed.set_footer(text="Powered by PokeAPI")
-            
+
             await ctx.send(embed=embed)
         else:
             await ctx.send("No item found.")
+
+    @pokedex.command()
+    @commands.bot_has_permissions(embed_links=True)
+    async def moves(self, ctx, *, move_name):
+        """Show Pokemon moveset"""
+        move_name = move_name.lower().replace(" ", "-")
+        async with ctx.typing():
+            move_info = await self.get_move_info(move_name)
+            if move_info is None:
+                await ctx.send("No move found.")
+                return
+
+            move_name = move_info["name"].capitalize()
+            move_type = move_info["type"]["name"].capitalize()
+            move_power = move_info.get("power", "-")
+            move_pp = move_info.get("pp", "-")
+            move_accuracy = move_info.get("accuracy", "-")
+            move_description = move_info["flavor_text_entries"][0]["flavor_text"]
+
+            embed = discord.Embed(title="Move Information", color=discord.Color.blue())
+            embed.add_field(name="Move Name", value=move_name, inline=False)
+            embed.add_field(name="Type", value=move_type, inline=True)
+            embed.add_field(name="Power", value=move_power, inline=True)
+            embed.add_field(name="PP", value=move_pp, inline=True)
+            embed.add_field(name="Accuracy", value=move_accuracy, inline=True)
+            embed.add_field(name="Description", value=move_description, inline=False)
+            embed.set_footer(text="Powered by PokeAPI")
+
+            await ctx.send(embed=embed)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command()
+    async def itemsdb(self, ctx, *, item_name):
+        """Show Pokemon item info"""
+        await self.iteminfo(ctx, item_name=item_name)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command()
+    async def movesdb(self, ctx, *, move_name):
+        """Show Pokemon moveset"""
+        await self.moves(ctx, move_name=move_name)
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_command()
+    async def pokedb(self, ctx, name_or_id):
+        """Show Pokemon info"""
+        await self.pokemon(ctx, name_or_id)
