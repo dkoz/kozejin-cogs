@@ -164,19 +164,19 @@ class Pokedex(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command("iteminfo")
+    @commands.hybrid_command()
     async def itemsdb(self, ctx, *, item_name):
         """Show Pokemon item info"""
         await self.iteminfo(ctx, item_name=item_name)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command("moves")
+    @commands.hybrid_command()
     async def movesdb(self, ctx, *, move_name):
         """Show Pokemon moveset"""
         await self.moves(ctx, move_name=move_name)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command("pokedex")
+    @commands.hybrid_command()
     async def pokedb(self, ctx, name_or_id):
         """Show Pokemon info"""
         await self.pokemon(ctx, name_or_id)
