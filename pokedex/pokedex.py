@@ -147,12 +147,12 @@ class Pokedex(commands.Cog):
             move_accuracy = move_info.get("accuracy", "-")
             move_description = move_info["flavor_text_entries"][0]["flavor_text"]
 
-            embed = discord.Embed(title="Move Information", color=discord.Color.blue())
-            embed.add_field(name="Move Name", value=move_name, inline=False)
+            embed = discord.Embed(title=f"Move Information: {move_name}", color=discord.Color.blue())
             embed.add_field(name="Type", value=move_type, inline=True)
             embed.add_field(name="Power", value=move_power, inline=True)
             embed.add_field(name="PP", value=move_pp, inline=True)
             embed.add_field(name="Accuracy", value=move_accuracy, inline=True)
+            embed.add_field(name="\u200b", value="\u200b", inline=False)
             embed.add_field(name="Description", value=move_description, inline=False)
             embed.set_footer(text="Powered by PokeAPI")
 
