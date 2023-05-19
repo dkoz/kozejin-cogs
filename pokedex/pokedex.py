@@ -6,7 +6,7 @@ from aiocache import cached, SimpleMemoryCache
 class Pokedex(commands.Cog):
     """Look up information on Pokemon and game items"""
 
-    __version__ = "1.1.4"
+    __version__ = "1.1.5"
 
     def __init__(self, bot):
         self.bot = bot
@@ -19,9 +19,9 @@ class Pokedex(commands.Cog):
                 else:
                     return None
 
-    async def get_pokemon_info(self, name_or_id):
+    async def get_pokemon_info(self, poke_name):
         base_url = "https://pokeapi.co/api/v2/pokemon-species/"
-        url = base_url + name_or_id.lower()
+        url = base_url + poke_name.lower()
         return await self.fetch_data(url)
 
     async def get_pokemon_data(self, pokemon_url):
@@ -49,17 +49,12 @@ class Pokedex(commands.Cog):
     async def cached_fetch_data(self, url):
         return await self.fetch_data(url)
 
-    @commands.group()
-    async def pokedex(self, ctx):
-        """Pokedex commands"""
-        pass
-
-    @pokedex.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
-    async def pokemon(self, ctx, name_or_id):
+    async def pokedex(self, ctx, poke_name):
         """Show Pokemon info"""
         async with ctx.typing():
-            pokemon_info = await self.get_pokemon_info(name_or_id)
+            pokemon_info = await self.get_pokemon_info(poke_name)
             if pokemon_info is None:
                 await ctx.send("No Pokemon found.")
                 return
@@ -100,7 +95,7 @@ class Pokedex(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @pokedex.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
     async def iteminfo(self, ctx, *, item_name):
         """Show Pokemon item info"""
@@ -134,10 +129,10 @@ class Pokedex(commands.Cog):
         else:
             await ctx.send("No item found.")
 
-    @pokedex.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
-    async def moves(self, ctx, *, move_name):
-        """Show Pokemon moveset"""
+    async def moveset(self, ctx, *, move_name):
+        """Show Pokemon moveset info"""
         move_name = move_name.lower().replace(" ", "-")
         async with ctx.typing():
             move_info = await self.get_move_info(move_name)
@@ -162,21 +157,3 @@ class Pokedex(commands.Cog):
             embed.set_footer(text="Powered by PokeAPI")
 
             await ctx.send(embed=embed)
-
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command()
-    async def itemsdb(self, ctx, *, item_name):
-        """Show Pokemon item info"""
-        await self.iteminfo(ctx, item_name=item_name)
-
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command()
-    async def movesdb(self, ctx, *, move_name):
-        """Show Pokemon moveset"""
-        await self.moves(ctx, move_name=move_name)
-
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command()
-    async def pokedb(self, ctx, name_or_id):
-        """Show Pokemon info"""
-        await self.pokemon(ctx, name_or_id)
