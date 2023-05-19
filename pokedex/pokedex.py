@@ -6,7 +6,7 @@ from aiocache import cached, SimpleMemoryCache
 class Pokedex(commands.Cog):
     """Look up information on Pokemon and game items"""
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.4"
 
     def __init__(self, bot):
         self.bot = bot
@@ -165,18 +165,18 @@ class Pokedex(commands.Cog):
 
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_command("iteminfo")
-    async def pokedex_iteminfo(self, ctx, *, item_name):
-        """Show Pokemon item info (hybrid)"""
-        await self.iteminfo(ctx, item_name)
+    async def itemsdb(self, ctx, *, item_name):
+        """Show Pokemon item info"""
+        await self.iteminfo(ctx, item_name=item_name)
 
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_command("moves")
-    async def pokedex_moves(self, ctx, move_name):
-        """Show Pokemon moveset (hybrid)"""
-        await self.moves(ctx, move_name)
+    async def movesdb(self, ctx, *, move_name):
+        """Show Pokemon moveset"""
+        await self.moves(ctx, move_name=move_name)
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_command("pokemon")
-    async def pokedex_pokemon(self, ctx, name_or_id):
-        """Show Pokemon info (hybrid)"""
+    @commands.hybrid_command("pokedex")
+    async def pokedb(self, ctx, name_or_id):
+        """Show Pokemon info"""
         await self.pokemon(ctx, name_or_id)
