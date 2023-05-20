@@ -4,7 +4,7 @@ from redbot.core import commands
 import aiohttp
 import json
 import datetime
-import urllib.parse
+from aiocache import cached
 
 class CloneTracker(commands.Cog):
     """Diablo Clone/Uber Diablo Tracker for Diablo 2: Resurrected"""
@@ -14,6 +14,7 @@ class CloneTracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @cached(ttl=120)
     async def fetch_uberd_data(self, url):
         async with aiohttp.ClientSession() as session:
             try:
