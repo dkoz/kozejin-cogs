@@ -57,7 +57,10 @@ class CloneTracker(commands.Cog):
     @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
     async def clonetracker(self, ctx, region: str):
-        """Search for Diablo in the specified region"""
+        """
+        Search for Uber Diablo in the specified region
+        Options: Americas, Europe, Asia or 'all'
+        """
 
         region = region.lower()
         valid_regions = ["americas", "europe", "asia"]
@@ -72,6 +75,7 @@ class CloneTracker(commands.Cog):
 
         for region in regions_to_search:
             embed = discord.Embed(title=f"Uber Diablo Status - {region.capitalize()}", color=discord.Color.red())
+            embed.set_footer(text="Data provided by Diablo2.io")
             for ladder in valid_ladders:
                 for hardcore in valid_hardcores:
                     
