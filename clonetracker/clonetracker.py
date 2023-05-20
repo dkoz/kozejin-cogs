@@ -9,7 +9,7 @@ from aiocache import cached
 class CloneTracker(commands.Cog):
     """Diablo Clone/Uber Diablo Tracker for Diablo 2: Resurrected"""
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     # Constants
     REGIONS = {"americas": "1", "europe": "2", "asia": "3", "all": "0"}
@@ -54,61 +54,79 @@ class CloneTracker(commands.Cog):
 
         return True
 
-    @commands.command()
+    @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
-    async def clonetracker(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
-        """Search for Diablo on all regions"""
-        if not await self.validate_params(ctx, region, ladder, hardcore):
+    async def clonetracker(self, ctx, region: str):
+        """Search for Diablo in the specified region"""
+
+        region = region.lower()
+        valid_regions = ["americas", "europe", "asia"]
+        valid_ladders = ["ladder", "non-ladder"]
+        valid_hardcores = ["hardcore", "softcore"]
+
+        if region not in valid_regions and region != "all":
+            await ctx.send("Invalid region. Please choose from Americas, Europe, Asia or 'all'.")
             return
 
-        region_code = self.REGIONS[region.lower()]
-        ladder_code = self.LADDERS[ladder.lower()]
-        hardcore_code = self.HARDCORES[hardcore.lower()]
+        regions_to_search = valid_regions if region == "all" else [region]
 
-        url = await self.get_uberd_url(region_code, ladder_code, hardcore_code)
+        for region in regions_to_search:
+            embed = discord.Embed(title=f"Uber Diablo Status - {region.capitalize()}", color=discord.Color.red())
+            for ladder in valid_ladders:
+                for hardcore in valid_hardcores:
+                    
+                    url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
+                    data = await self.fetch_uberd_data(url)
 
-        data = await self.fetch_uberd_data(url)
+                    if data is None:
+                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="An error occurred while fetching Uber Diablo information.", inline=False)
+                        continue
 
-        if data is None:
-            await ctx.send("An error occurred while fetching Uber Diablo information.")
-            return
+                    if not data:
+                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="No information available.", inline=False)
+                        continue
 
-        embed = discord.Embed(title="Uber Diablo Status", color=discord.Color.red())
+                    progress = data[0]['progress']
+                    timestamp = data[0]['timestamped']
+                    dt = datetime.datetime.fromtimestamp(int(timestamp))
+                    formatted_time = dt.strftime("%I:%M %p")
 
-        if not data:
-            embed.add_field(name=f"{ladder} - {hardcore}", value="No information available.", inline=False)
-        else:
-            progress = data[0]['progress']
-            timestamp = data[0]['timestamped']
-            dt = datetime.datetime.fromtimestamp(int(timestamp))
-            formatted_time = dt.strftime("%I:%M %p")
-            embed.add_field(name=f"{ladder} - {hardcore}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
-        
-        await ctx.send(embed=embed)
+                    embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
+
+            await ctx.send(embed=embed)
 
     @commands.command()
-    async def clonedatadump(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
-        """Search for Diablo on all regions (Text Format)"""
-        if not await self.validate_params(ctx, region, ladder, hardcore):
+    async def clonedatadump(self, ctx, region: str):
+        """Dumps Diablo clone data in raw text format"""
+        
+        region = region.lower()
+        valid_regions = ["americas", "europe", "asia"]
+        valid_ladders = ["ladder", "non-ladder"]
+        valid_hardcores = ["hardcore", "softcore"]
+
+        if region not in valid_regions and region != "all":
+            await ctx.send("Invalid region. Please choose from Americas, Europe, Asia or 'all'.")
             return
 
-        region_code = self.REGIONS[region.lower()]
-        ladder_code = self.LADDERS[ladder.lower()]
-        hardcore_code = self.HARDCORES[hardcore.lower()]
+        regions_to_search = valid_regions if region == "all" else [region]
 
-        url = await self.get_uberd_url(region_code, ladder_code, hardcore_code)
+        messages = []
+        for region in regions_to_search:
+            for ladder in valid_ladders:
+                for hardcore in valid_hardcores:
+                    
+                    url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
+                    data = await self.fetch_uberd_data(url)
 
-        data = await self.fetch_uberd_data(url)
+                    if data is None:
+                        messages.append(f"An error occurred while fetching {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()} Uber Diablo information.")
+                        continue
 
-        if data is None:
-            await ctx.send("An error occurred while fetching Uber Diablo information.")
-            return
+                    if not data:
+                        messages.append(f"No information available for {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}.")
+                        continue
 
-        if not data:
-            await ctx.send(f"{ladder} - {hardcore}: No information available.")
-        else:
-            progress = data[0]['progress']
-            timestamp = data[0]['timestamped']
-            dt = datetime.datetime.fromtimestamp(int(timestamp))
-            formatted_time = dt.strftime("%I:%M %p")
-            await ctx.send(f"{ladder} - {hardcore}: Progress: {progress}/6, Last Updated: {formatted_time}")
+                    progress = data[0]['progress']
+                    messages.append(f"[{progress}/6] - {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}")
+
+        await ctx.send("\n".join(messages))
