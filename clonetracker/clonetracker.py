@@ -9,216 +9,128 @@ from aiocache import cached
 class CloneTracker(commands.Cog):
     """Diablo Clone/Uber Diablo Tracker for Diablo 2: Resurrected"""
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
+
+    # Constants
+    REGIONS = {"americas": "1", "europe": "2", "asia": "3", "all": "0"}
+    LADDERS = {"ladder": "1", "non-ladder": "2", "all": "0"}
+    HARDCORES = {"hardcore": "1", "softcore": "2", "all": "0"}
 
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
+
+    async def cog_cleanup(self):
+        await self.session.close()
 
     @cached(ttl=120)
     async def fetch_uberd_data(self, url):
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url) as response:
-                    if response.status != 200:
-                        return None
-                    data = await response.text()
-                    return json.loads(data)
-            except aiohttp.ClientError as e:
-                return None
+        try:
+            async with self.session.get(url) as response:
+                if response.status != 200:
+                    return None
+                data = await response.text()
+                return json.loads(data)
+        except aiohttp.ClientError as e:
+            return None
 
     async def get_uberd_url(self, region_code, ladder_code, hardcore_code):
         base_url = "https://diablo2.io/dclone_api.php"
         url = f"{base_url}?region={region_code}&ladder={ladder_code}&hc={hardcore_code}"
         return url
 
+    async def validate_params(self, ctx, region, ladder, hardcore):
+        if region.lower() not in self.REGIONS:
+            await ctx.send("Invalid region specified. Valid regions are: Americas, Europe, Asia, All.")
+            return False
+
+        if ladder.lower() not in self.LADDERS:
+            await ctx.send("Invalid ladder type specified. Valid types are: Ladder, Non-Ladder, All.")
+            return False
+
+        if hardcore.lower() not in self.HARDCORES:
+            await ctx.send("Invalid hardcore type specified. Valid types are: Hardcore, Softcore, All.")
+            return False
+
+        return True
+
     @commands.hybrid_command()
     @commands.bot_has_permissions(embed_links=True)
-    async def clonetracker(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
-        """Search for Diablo on all regions"""
-        valid_regions = ["americas", "europe", "asia", "all"]
-        valid_ladder = ["ladder", "non-ladder", "all"]
-        valid_hardcore = ["hardcore", "softcore", "all"]
+    async def clonetracker(self, ctx, region: str):
+        """
+        Search for Uber Diablo in the specified region
+        Options: Americas, Europe, Asia or 'all'
+        """
 
-        if region.lower() not in valid_regions:
-            await ctx.send("Invalid region specified. Valid regions are: Americas, Europe, Asia, All.")
+        region = region.lower()
+        valid_regions = ["americas", "europe", "asia"]
+        valid_ladders = ["ladder", "non-ladder"]
+        valid_hardcores = ["hardcore", "softcore"]
+
+        if region not in valid_regions and region != "all":
+            await ctx.send("Invalid region. Please choose from Americas, Europe, Asia or 'all'.")
             return
 
-        if ladder.lower() not in valid_ladder:
-            await ctx.send("Invalid ladder type specified. Valid types are: Ladder, Non-Ladder, All.")
-            return
+        regions_to_search = valid_regions if region == "all" else [region]
 
-        if hardcore.lower() not in valid_hardcore:
-            await ctx.send("Invalid hardcore type specified. Valid types are: Hardcore, Softcore, All.")
-            return
-
-        if region.lower() == "all":
-            regions = ["americas", "europe", "asia"]
-        else:
-            regions = [region.lower()]
-
-        if ladder.lower() == "all":
-            ladders = ["ladder", "non-ladder"]
-        else:
-            ladders = [ladder.lower()]
-
-        if hardcore.lower() == "all":
-            hardcore_types = ["hardcore", "softcore"]
-        else:
-            hardcore_types = [hardcore.lower()]
-
-        for region in regions:
-            region_code = await self.get_region_code(region)
-            region_name = await self.get_region_name(region_code)
-
-            embed = discord.Embed(title=f"Uber Diablo Information - {region_name}", description="Tracking data for Uber Diablo", color=discord.Color.blue())
+        for region in regions_to_search:
+            embed = discord.Embed(title=f"Uber Diablo Status - {region.capitalize()}", color=discord.Color.red())
             embed.set_footer(text="Data provided by Diablo2.io")
-
-            for ladder in ladders:
-                ladder_code = await self.get_ladder_code(ladder)
-                ladder_type = await self.get_ladder_type(ladder_code)
-
-                for hardcore_type in hardcore_types:
-                    hardcore_code = await self.get_hardcore_code(hardcore_type)
-                    hardcore_name = await self.get_hardcore_type(hardcore_code)
-
-                    url = await self.get_uberd_url(region_code, ladder_code, hardcore_code)
-
+            for ladder in valid_ladders:
+                for hardcore in valid_hardcores:
+                    
+                    url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
                     data = await self.fetch_uberd_data(url)
 
                     if data is None:
-                        await ctx.send("An error occurred while fetching Uber Diablo information.")
-                        return
+                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="An error occurred while fetching Uber Diablo information.", inline=False)
+                        continue
 
                     if not data:
-                        embed.add_field(name=f"{ladder_type} - {hardcore_name}", value="No information available.")
-                    else:
-                        progress = data[0]['progress']
-                        timestamp = data[0]['timestamped']
-                        dt = datetime.datetime.fromtimestamp(int(timestamp))
-                        formatted_time = dt.strftime("%I:%M %p")
-                        embed.add_field(name=f"{ladder_type} - {hardcore_name}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
+                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="No information available.", inline=False)
+                        continue
+
+                    progress = data[0]['progress']
+                    timestamp = data[0]['timestamped']
+                    dt = datetime.datetime.fromtimestamp(int(timestamp))
+                    formatted_time = dt.strftime("%I:%M %p")
+
+                    embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value=f"Progress: {progress}/6\nLast Updated: {formatted_time}", inline=False)
 
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def clonedatadump(self, ctx, region: str = "all", ladder: str = "all", hardcore: str = "all"):
-        """Search for Diablo on all regions (Text Format)"""
-        valid_regions = ["americas", "europe", "asia", "all"]
-        valid_ladder = ["ladder", "non-ladder", "all"]
-        valid_hardcore = ["hardcore", "softcore", "all"]
+    async def clonedatadump(self, ctx, region: str):
+        """Dumps Diablo clone data in raw text format"""
+        
+        region = region.lower()
+        valid_regions = ["americas", "europe", "asia"]
+        valid_ladders = ["ladder", "non-ladder"]
+        valid_hardcores = ["hardcore", "softcore"]
 
-        if region.lower() not in valid_regions:
-            await ctx.send("Invalid region specified. Valid regions are: Americas, Europe, Asia, All.")
+        if region not in valid_regions and region != "all":
+            await ctx.send("Invalid region. Please choose from Americas, Europe, Asia or 'all'.")
             return
 
-        if ladder.lower() not in valid_ladder:
-            await ctx.send("Invalid ladder type specified. Valid types are: Ladder, Non-Ladder, All.")
-            return
+        regions_to_search = valid_regions if region == "all" else [region]
 
-        if hardcore.lower() not in valid_hardcore:
-            await ctx.send("Invalid hardcore type specified. Valid types are: Hardcore, Softcore, All.")
-            return
-
-        if region.lower() == "all":
-            regions = ["americas", "europe", "asia"]
-        else:
-            regions = [region.lower()]
-
-        if ladder.lower() == "all":
-            ladders = ["ladder", "non-ladder"]
-        else:
-            ladders = [ladder.lower()]
-
-        if hardcore.lower() == "all":
-            hardcore_types = ["hardcore", "softcore"]
-        else:
-            hardcore_types = [hardcore.lower()]
-
-        result = []
-
-        for region in regions:
-            region_code = await self.get_region_code(region)
-            region_name = await self.get_region_name(region_code)
-
-            for ladder in ladders:
-                ladder_code = await self.get_ladder_code(ladder)
-                ladder_type = await self.get_ladder_type(ladder_code)
-
-                for hardcore_type in hardcore_types:
-                    hardcore_code = await self.get_hardcore_code(hardcore_type)
-                    hardcore_name = await self.get_hardcore_type(hardcore_code)
-
-                    url = await self.get_uberd_url(region_code, ladder_code, hardcore_code)
-
+        messages = []
+        for region in regions_to_search:
+            for ladder in valid_ladders:
+                for hardcore in valid_hardcores:
+                    
+                    url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
                     data = await self.fetch_uberd_data(url)
 
                     if data is None:
-                        await ctx.send("An error occurred while fetching Uber Diablo information.")
-                        return
+                        messages.append(f"An error occurred while fetching {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()} Uber Diablo information.")
+                        continue
 
                     if not data:
-                        text = f"No information available for {ladder_type} - {hardcore_name}"
-                    else:
-                        progress = data[0]['progress']
-                        timestamp = data[0]['timestamped']
-                        dt = datetime.datetime.fromtimestamp(int(timestamp))
-                        formatted_time = dt.strftime("%I:%M %p")
-                        text = f"[{progress}/6] - {region_name} - {ladder_type}({hardcore_name}) - [{formatted_time}]"
+                        messages.append(f"No information available for {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}.")
+                        continue
 
-                    result.append(text)
+                    progress = data[0]['progress']
+                    messages.append(f"[{progress}/6] - {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}")
 
-        if result:
-            message = "\n".join(result)
-            await ctx.send(message)
-
-    async def get_region_code(self, region):
-        if region.lower() == "americas":
-            return "1"
-        elif region.lower() == "europe":
-            return "2"
-        elif region.lower() == "asia":
-            return "3"
-        else:
-            return "0"
-
-    async def get_region_name(self, region_code):
-        if region_code == "1":
-            return "Americas"
-        elif region_code == "2":
-            return "Europe"
-        elif region_code == "3":
-            return "Asia"
-        else:
-            return "Unknown"
-
-    async def get_ladder_code(self, ladder):
-        if ladder.lower() == "ladder":
-            return "1"
-        elif ladder.lower() == "non-ladder":
-            return "2"
-        else:
-            return "0"
-
-    async def get_ladder_type(self, ladder_code):
-        if ladder_code == "1":
-            return "Ladder"
-        elif ladder_code == "2":
-            return "Non-Ladder"
-        else:
-            return "Unknown"
-
-    async def get_hardcore_code(self, hardcore):
-        if hardcore.lower() == "hardcore":
-            return "1"
-        elif hardcore.lower() == "softcore":
-            return "2"
-        else:
-            return "0"
-
-    async def get_hardcore_type(self, hardcore_code):
-        if hardcore_code == "1":
-            return "Hardcore"
-        elif hardcore_code == "2":
-            return "Softcore"
-        else:
-            return "Unknown"
+        await ctx.send("\n".join(messages))
