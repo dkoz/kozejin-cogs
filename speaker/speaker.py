@@ -95,3 +95,48 @@ class Speaker(commands.Cog):
             await ctx.send("Embedded message edited.")
         else:
             await ctx.send("The specified message does not have an embed.")
+            
+    @speak_group.command(name="addbutton")
+    async def speak_add_button(self, ctx, channel: discord.TextChannel, message_id: int):
+        """Add a button to an existing embedded message sent by the bot."""
+        try:
+            message = await channel.fetch_message(message_id)
+        except Exception:
+            await ctx.send("Could not find the specified message.")
+            return
+
+        if message.author == self.bot.user and message.embeds:
+            old_embed = message.embeds[0]
+            new_embed = discord.Embed(title=old_embed.title, description=old_embed.description, color=old_embed.color, timestamp=old_embed.timestamp)
+
+            view = discord.ui.View()
+
+            await ctx.send("Please enter the number of buttons you want to add:")
+            num_buttons = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            
+            num_buttons = int(num_buttons.content)
+
+            for i in range(num_buttons):
+                await ctx.send(f"Please enter the label for button {i+1}:")
+                button_label = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                await ctx.send(f"Please enter the URL for button {i+1}:")
+                button_url = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+
+                if not button_url.content.startswith(('http://', 'https://', 'discord://')):
+                    await ctx.send(f"Invalid URL for button {i+1}. Please make sure the URL starts with 'http', 'https', or 'discord'.")
+                    continue
+
+                class LinkButton(discord.ui.Button):
+                    def __init__(self):
+                        super().__init__(label=button_label.content, style=discord.ButtonStyle.link, url=button_url.content)
+
+                link_button = LinkButton()
+                view.add_item(link_button)
+
+            await message.edit(
+                embed=new_embed,
+                view=view
+            )
+            await ctx.send("Buttons added to embedded message.")
+        else:
+            await ctx.send("You can only add buttons to embedded messages sent by the bot.")
