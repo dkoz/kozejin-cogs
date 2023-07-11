@@ -30,6 +30,7 @@ CloneTracker | Track Diablo Clone/Uber Diablo
 Pokedex | Search for your favorite pokemon or item info
 Deckard Cain | Chat with Deckard Cain on ChatGPT
 Speaker | Send and edit messages as the bot
+Timestamps | Create discord timestamps
 
-# Credit
+# Credits
 [Jintaku](https://github.com/Jintaku) for making original pokedex cog
