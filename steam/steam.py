@@ -38,14 +38,11 @@ class SteamAPI(commands.Cog):
         
     @commands.command()
     @commands.guild_only()
-    @commands.has_permissions(administrator=True)
+    @commands.is_owner()
     async def setsteamapikey(self, ctx, key: str):
         """Set the Steam API key for this guild (Server Owner Only)"""
-        if ctx.author == ctx.guild.owner:
-            await self.bot.config.guild(ctx.guild).steam_api_key.set(key)
-            await ctx.send("Steam API key has been set for this guild.")
-        else:
-            await ctx.send("Only the server owner can set the Steam API key.")
+        await self.bot.config.guild(ctx.guild).steam_api_key.set(key)
+        await ctx.send("Steam API key has been set for this guild.")
 
     @app_commands.command(description="Search for user profiles on the Steam database.")
     async def steamprofile(self, interaction: discord.Interaction, identifier: str):
