@@ -1,34 +1,57 @@
 import discord
-from redbot.core import commands
+from redbot.core import commands, Config
 import requests
 import aiohttp
 from steam.steamid import SteamID
 
-STEAM_API_KEY = ""
-
 class SteamAPI(commands.Cog):
+    """Search for games and player profiles.
+
+    Grab your Steam [API Key](https://steamcommunity.com/dev/apikey).
+    Use the command `.setsteamapikey <key here>` to set it."""
+
+    __version__ = "1.0.1"
+
     def __init__(self, bot):
         self.bot = bot
+        self.config = Config.get_conf(self, identifier=65847657, force_registration=True)
+        default_guild = {"steam_api_key": None}
+        self.config.register_guild(**default_guild)
 
-    async def resolve_vanity_url(self, custom_url):
-        url = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={STEAM_API_KEY}&vanityurl={custom_url}"
+    async def resolve_vanity_url(self, ctx, custom_url):
+        steam_api_key = await self.config.guild(ctx.guild).steam_api_key()
+        url = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={steam_api_key}&vanityurl={custom_url}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
         return data['response']['steamid'] if 'response' in data and 'steamid' in data['response'] else None
 
-    async def get_steamid64(self, identifier):
+    async def get_steamid64(self, ctx, identifier):
         if identifier.isdigit():
             return identifier
         elif identifier.startswith('STEAM_'):
             steam_id = SteamID(identifier)
             return str(steam_id.as_64)
         else:
-            return await self.resolve_vanity_url(identifier)
+            return await self.resolve_vanity_url(ctx, identifier)
+        
+    @commands.command()
+    @commands.guild_only()
+    async def setsteamapikey(self, ctx, key: str):
+        """Set the Steam API key for this guild"""
+        await self.config.guild(ctx.guild).steam_api_key.set(key)
+        await ctx.send("Steam API key has been set for this guild.")
 
     @commands.command()
+    @commands.guild_only()
     async def steamprofile(self, ctx, identifier: str):
-        steam_id64 = await self.get_steamid64(identifier)
+        """Search for user profiles on the steam database."""
+        STEAM_API_KEY = await self.config.guild(ctx.guild).steam_api_key()
+        if not STEAM_API_KEY:
+            await ctx.send("The Steam API key has not been set. Please set it using the `setsteamapikey` command.")
+            return
+            
+        steam_id64 = await self.get_steamid64(ctx, identifier)
         if steam_id64 is None:
             await ctx.send("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
             return
@@ -71,7 +94,9 @@ class SteamAPI(commands.Cog):
             await ctx.send("Unable to fetch the player information.")
             
     @commands.command()
+    @commands.guild_only()
     async def steamgame(self, ctx, *, name: str):
+        """Search for games on the steam database."""
         url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={name}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
@@ -95,7 +120,7 @@ class SteamAPI(commands.Cog):
                 )
 
                 embed.set_image(url=game_info['header_image'])
-                
+
                 about_the_game = game_info['short_description']
                 if len(about_the_game) > 1024:
                     about_the_game = about_the_game[:1021] + "..."
