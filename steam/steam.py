@@ -1,14 +1,15 @@
 import discord
-from redbot.core import commands, Config
+from redbot.core import commands, Config, app_commands
 import requests
 import aiohttp
 from steam.steamid import SteamID
+from datetime import datetime
 
 class SteamAPI(commands.Cog):
     """Search for games and player profiles.
 
     Grab your Steam [API Key](https://steamcommunity.com/dev/apikey).
-    Use the command `.setsteamapikey <key here>` to set it."""
+    Use the command `[p]setsteamapikey <key here>` to set it."""
 
     __version__ = "1.0.1"
 
@@ -37,23 +38,26 @@ class SteamAPI(commands.Cog):
         
     @commands.command()
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def setsteamapikey(self, ctx, key: str):
-        """Set the Steam API key for this guild"""
-        await self.config.guild(ctx.guild).steam_api_key.set(key)
-        await ctx.send("Steam API key has been set for this guild.")
+        """Set the Steam API key for this guild (Server Owner Only)"""
+        if ctx.author == ctx.guild.owner:
+            await self.bot.config.guild(ctx.guild).steam_api_key.set(key)
+            await ctx.send("Steam API key has been set for this guild.")
+        else:
+            await ctx.send("Only the server owner can set the Steam API key.")
 
-    @commands.command()
-    @commands.guild_only()
-    async def steamprofile(self, ctx, identifier: str):
+    @app_commands.command(description="Search for user profiles on the Steam database.")
+    async def steamprofile(self, interaction: discord.Interaction, identifier: str):
         """Search for user profiles on the steam database."""
-        STEAM_API_KEY = await self.config.guild(ctx.guild).steam_api_key()
+        STEAM_API_KEY = await self.config.guild(interaction.guild).steam_api_key()
         if not STEAM_API_KEY:
-            await ctx.send("The Steam API key has not been set. Please set it using the `setsteamapikey` command.")
+            await interaction.response.send_message("The Steam API key has not been set. Please set it using the `setsteamapikey` command.")
             return
-            
-        steam_id64 = await self.get_steamid64(ctx, identifier)
+
+        steam_id64 = await self.get_steamid64(interaction, identifier)
         if steam_id64 is None:
-            await ctx.send("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
+            await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
             return
 
         async with aiohttp.ClientSession() as session:
@@ -70,6 +74,9 @@ class SteamAPI(commands.Cog):
 
             steam_id = SteamID(int(steam_id64))
 
+            account_creation_date = datetime.utcfromtimestamp(player['timecreated'])
+            account_age = (datetime.utcnow() - account_creation_date).days // 365
+
             embed = discord.Embed(
                 title=player['personaname'],
                 url=f"https://steamcommunity.com/profiles/{steam_id64}",
@@ -78,7 +85,7 @@ class SteamAPI(commands.Cog):
 
             embed.set_thumbnail(url=player['avatarfull'])
 
-            embed.add_field(name="Profile Info", value=f"**Name:** {player.get('realname', 'Unknown')}\n**Country:** {player.get('loccountrycode', 'Unknown')}", inline=True)
+            embed.add_field(name="Profile Info", value=f"**Name:** {player.get('realname', 'Unknown')}\n**Country:** {player.get('loccountrycode', 'Unknown')}\n**Account Age:** {account_age} years", inline=True)
             embed.add_field(name="SteamID", value=f"**SteamID:** {steam_id.as_steam2}\n**SteamID3:** [U:1:{steam_id.as_32}]\n**SteamID64:** {steam_id64}", inline=True)
 
             if ban_info is not None:
@@ -86,25 +93,23 @@ class SteamAPI(commands.Cog):
                 ban_info_str += f"**Bans:** {ban_info['NumberOfVACBans']} (Last: {ban_info['DaysSinceLastBan']} days ago)\n"
                 ban_info_str += f"**Trade Banned:** {ban_info['EconomyBan']}"
                 embed.add_field(name="Ban Info", value=ban_info_str, inline=True)
-                
-                embed.set_footer(text="Powered by Steam")
 
-            await ctx.send(embed=embed)
+            embed.set_footer(text="Powered by Steam")
+
+            await interaction.response.send_message(embed=embed)
         else:
-            await ctx.send("Unable to fetch the player information.")
+            await interaction.response.send_message("Unable to fetch the player information.")
+
             
-    @commands.command()
-    @commands.guild_only()
-    async def steamgame(self, ctx, *, name: str):
-        """Search for games on the steam database."""
-        url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={name}"
+    @app_commands.command(description="Search for games on the Steam database.")
+    async def steamgame(self, interaction: discord.Interaction, game_name: str):
+        url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={game_name}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
-        
+
         if data and data.get('total') > 0:
             appid = data['items'][0]['id']
-            game_name = data['items'][0]['name']
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=us") as response:
@@ -112,7 +117,7 @@ class SteamAPI(commands.Cog):
 
             if str(appid) in data and data[str(appid)]['success']:
                 game_info = data[str(appid)]['data']
-                
+
                 embed = discord.Embed(
                     title=game_info['name'],
                     url=f"https://store.steampowered.com/app/{appid}",
@@ -137,11 +142,11 @@ class SteamAPI(commands.Cog):
                 embed.add_field(name="\u200b", value="\u200b", inline=True)
                 embed.add_field(name="\u200b", value="\u200b", inline=True)
                 embed.add_field(name="\u200b", value="\u200b", inline=True)
-                
+
                 embed.set_footer(text="Powered by Steam")
 
-                await ctx.send(embed=embed)
+                await interaction.response.send_message(embed=embed)
             else:
-                await ctx.send("Unable to fetch the game information.")
+                await interaction.response.send_message("Unable to fetch the game information.")
         else:
-            await ctx.send("Game not found.")
+            await interaction.response.send_message("Game not found.")
