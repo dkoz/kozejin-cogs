@@ -1,0 +1,11 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Thank you for installing my Steam API cog!\nStart by typing `[p]help SteamAPI`",
+    "name": "steam",
+    "short": "Search up steam games and user profiles.",
+    "description": "Search up steam games and user profiles utilizing Steam API.",
+    "tags": ["steam", "utilities", "games", "api"],
+    "requirements": ["steam", "asyncio", "aiohttp"],
+    "hidden": false,
+    "min_bot_version": "3.5.0"
+}

@@ -4,12 +4,5 @@
     "name": "kozejin-cogs",
     "short": "Utility cogs for games by KoZ",
     "description": "Just a collection of utility cogs for video games by KoZ.",
-    "tags": [
-        "utilities",
-        "fun",
-        "diablo",
-        "pokedex",
-        "pokemon",
-        "kozejin"
-    ]
+    "tags": ["utilities", "fun", "diablo", "pokedex", "pokemon", "kozejin", "steam", "speaker"]
 }
