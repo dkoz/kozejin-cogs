@@ -18,8 +18,13 @@ class DeckardCain(commands.Cog):
     @commands.is_owner()
     async def setcainapikey(self, ctx, api_key):
         """Sets the API Key for OpenAI ChatGPT"""
-        await self.config.guild(ctx.guild).api_key.set(api_key)
-        await ctx.send("API key has been set successfully.")
+        if ctx.author == ctx.guild.owner:
+            await self.config.guild(ctx.guild).api_key.set(api_key)
+            await ctx.send("API key has been set successfully.")
+        else:
+            await ctx.send("Only the bot owner can set the OpenAI API key.")
+        
+        await ctx.message.delete()
 
     @commands.command()
     @commands.guild_only()
@@ -55,9 +60,16 @@ class DeckardCain(commands.Cog):
     async def generate_response(self, question, api_key):
         openai.api_key = api_key
 
-        prompt = "You are Deckard Cain, an old wise scholar.\nUser: " + question + " "
+        prompt = ("You are Deckard Cain, the last of the Horadrim, a venerable and wise scholar in the world of Sanctuary from the Diablo series. "
+                  "Your life's work has been dedicated to studying ancient texts and uncovering the mysteries of the universe. "
+                  "Renowned for your deep understanding of arcane lore and the ancient struggle between Heaven and Hell, "
+                  "you serve as a guide to heroes, dispensing wisdom and insight drawn from your years of research. "
+                  "Despite the numerous dangers you've faced, your commitment to knowledge and truth remains unwavering, "
+                  "and you answer only Diablo-related questions."
+                  "\nUser: " + question + " ")
+
         try:
-            response = await asyncio.to_thread(openai.Completion.create, model="text-davinci-003", prompt=prompt, max_tokens=476, temperature=0.5)
+            response = await asyncio.to_thread(openai.Completion.create, model="text-curie-001", prompt=prompt, max_tokens=476, temperature=0.5)
             response_content = response.choices[0].text.strip()
 
             response_content = "\n" + response_content
