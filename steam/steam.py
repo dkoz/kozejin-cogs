@@ -60,23 +60,27 @@ class SteamAPI(commands.Cog):
 
         steam_id64 = await self.get_steamid64(interaction, identifier)
         if steam_id64 is None:
-            if not interaction.response.is_done():
-                await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
+            await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
             return
 
         async with aiohttp.ClientSession() as session:
             async with session.get(f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steam_id64}") as response:
                 data = await response.json()
-
             async with session.get(f"http://api.steampowered.com/ISteamUser/GetPlayerBans/v1/?key={STEAM_API_KEY}&steamids={steam_id64}") as response:
                 ban_data = await response.json()
 
         if data and "response" in data and "players" in data["response"] and len(data["response"]["players"]) > 0:
             player = data["response"]["players"][0]
             ban_info = ban_data["players"][0] if "players" in ban_data else None
+            
+            if 'timecreated' in player:
+                account_creation_date = datetime.utcfromtimestamp(player['timecreated'])
+                account_age = (datetime.utcnow() - account_creation_date).days // 365
+            else:
+                account_creation_date = None
+                account_age = "Unknown"
+
             steam_id = SteamID(int(steam_id64))
-            account_creation_date = datetime.utcfromtimestamp(player['timecreated'])
-            account_age = (datetime.utcnow() - account_creation_date).days // 365
             embed = discord.Embed(
                 title=player['personaname'],
                 url=f"https://steamcommunity.com/profiles/{steam_id64}",
@@ -85,16 +89,17 @@ class SteamAPI(commands.Cog):
             embed.set_thumbnail(url=player['avatarfull'])
             embed.add_field(name="Profile Info", value=f"**Name:** {player.get('realname', 'Unknown')}\n**Country:** {player.get('loccountrycode', 'Unknown')}\n**Account Age:** {account_age} years", inline=True)
             embed.add_field(name="SteamID", value=f"**SteamID:** {steam_id.as_steam2}\n**SteamID3:** [U:1:{steam_id.as_32}]\n**SteamID64:** {steam_id64}", inline=True)
+            
             if ban_info is not None:
                 ban_info_str = f"**VAC Banned:** {ban_info['VACBanned']}\n"
                 ban_info_str += f"**Bans:** {ban_info['NumberOfVACBans']} (Last: {ban_info['DaysSinceLastBan']} days ago)\n"
                 ban_info_str += f"**Trade Banned:** {ban_info['EconomyBan']}"
                 embed.add_field(name="Ban Info", value=ban_info_str, inline=True)
+            
             embed.set_footer(text="Powered by Steam")
             await interaction.response.send_message(embed=embed)
         else:
-            if not interaction.response.is_done():
-                await interaction.response.send_message("Unable to fetch the player information.")
+            await interaction.response.send_message("Unable to fetch the player information.")
             
     @app_commands.command(description="Search for games on the Steam database.")
     async def steamgame(self, interaction: discord.Interaction, game_name: str):
