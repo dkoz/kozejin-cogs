@@ -1,6 +1,6 @@
 {
     "author": ["Kozejin"],
-    "install_msg": "Installed Clone/Uber Tracker for Diablo 2: Resurrected!\nType `[p].help CloneTracker` for commands information.",
+    "install_msg": "Installed Clone/Uber Tracker for Diablo 2: Resurrected!\nType `[p]help CloneTracker` for commands information.",
     "name": "CloneTracker",
     "short": "Uber/Clone Tracker for Diablo 2: Resurrected",
     "description": "Uber/Clone Tracker for Diablo 2: Resurrected",

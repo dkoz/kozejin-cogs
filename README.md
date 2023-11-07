@@ -31,7 +31,7 @@ Pokedex | Search for your favorite pokemon or item info
 Deckard Cain | Chat with Deckard Cain on ChatGPT
 Speaker | Send and edit messages as the bot
 Timestamps | Create discord timestamps
-Steam | Look up steam games and steam user profiles
+SteamApp | Look up steam games and steam user profiles
 
 # Credits
 [Jintaku](https://github.com/Jintaku) for making original pokedex cog
