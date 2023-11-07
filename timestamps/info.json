@@ -1,6 +1,6 @@
 {
     "author": ["Kozejin"],
-    "install_msg": "Create discord timestamps with /timestamp",
+    "install_msg": "Create discord timestamps with /timestamp\nEnable slash commands with `[p]slash enablecog timestamps` and sync using `[p]slash sync`",
     "name": "Timestamps",
     "short": "Create discord timestamps",
     "description": "Create discord timestamps with a slash command.",
