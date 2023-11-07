@@ -1,12 +1,12 @@
 {
     "author": ["Kozejin"],
     "install_msg": "Thank you for installing my Steam API cog!\nStart by typing `[p]help SteamAPI`\nThen enable the app commands using `[p]slash enablecog steam` and `[p]slash sync`.",
-    "name": "steam",
+    "name": "steamapp",
     "short": "Search up steam games and user profiles.",
     "description": "Search up steam games and user profiles utilizing Steam API.",
     "tags": ["steam", "utilities", "games", "api"],
     "requirements": ["steam", "asyncio", "aiohttp"],
     "hidden": false,
     "min_bot_version": "3.5.0",
-    "min_python_version": [3,10,0]
+    "min_python_version": [3,9,0]
 }
