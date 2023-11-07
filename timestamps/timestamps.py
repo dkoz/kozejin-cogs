@@ -8,7 +8,7 @@ class TimestampPy(commands.Cog):
         self.bot = bot
 
     @app_commands.command()
-    @app_commands.describe(date="The date for the timestamp", format="The format of the timestamp")
+    @app_commands.describe(date="Example: November 7th at 12 pm est", format="The format of the timestamp")
     @app_commands.choices(format=[
         app_commands.Choice(name="Short Time", value="t"),
         app_commands.Choice(name="Long Time", value="T"),

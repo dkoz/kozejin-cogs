@@ -1,11 +1,12 @@
 {
     "author": ["Kozejin"],
-    "install_msg": "Chat with Deckard Cain on OpenAI!",
+    "install_msg": "Load the cog with `[p]load deckardcard`, use `[p]help DeckardCain` to get started!",
     "name": "DeckardCain",
     "short": "Deckard Cain cog built on OpenAI",
     "description": "Deckard Cain cog built on OpenAI",
     "tags": ["chatgpt", "openai", "deckard", "cain", "diablo"],
     "requirements": ["openai", "asyncio"],
     "hidden": false,
-    "min_bot_version": "3.5.0"
+    "min_bot_version": "3.5.0",
+    "min_python_version": [3,10,0]
 }

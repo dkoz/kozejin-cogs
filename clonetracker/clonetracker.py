@@ -9,9 +9,8 @@ from aiocache import cached
 class CloneTracker(commands.Cog):
     """Diablo Clone/Uber Diablo Tracker for Diablo 2: Resurrected"""
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
-    # Constants
     REGIONS = {"americas": "1", "europe": "2", "asia": "3", "all": "0"}
     LADDERS = {"ladder": "1", "non-ladder": "2", "all": "0"}
     HARDCORES = {"hardcore": "1", "softcore": "2", "all": "0"}
@@ -82,12 +81,9 @@ class CloneTracker(commands.Cog):
                     url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
                     data = await self.fetch_uberd_data(url)
 
-                    if data is None:
-                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="An error occurred while fetching Uber Diablo information.", inline=False)
-                        continue
-
-                    if not data:
-                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value="No information available.", inline=False)
+                    if data is None or not data:
+                        error_message = "An error occurred while fetching Uber Diablo information." if data is None else "No information available."
+                        embed.add_field(name=f"{ladder.capitalize()} - {hardcore.capitalize()}", value=error_message, inline=False)
                         continue
 
                     progress = data[0]['progress']
@@ -100,7 +96,7 @@ class CloneTracker(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def clonedatadump(self, ctx, region: str):
+    async def clonetrackersimple(self, ctx, region: str):
         """Dumps Diablo clone data in raw text format"""
         
         region = region.lower()
@@ -122,12 +118,9 @@ class CloneTracker(commands.Cog):
                     url = await self.get_uberd_url(self.REGIONS[region], self.LADDERS[ladder], self.HARDCORES[hardcore])
                     data = await self.fetch_uberd_data(url)
 
-                    if data is None:
-                        messages.append(f"An error occurred while fetching {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()} Uber Diablo information.")
-                        continue
-
-                    if not data:
-                        messages.append(f"No information available for {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}.")
+                    if data is None or not data:
+                        error_message = "An error occurred" if data is None else "No information available"
+                        messages.append(f"{error_message} for {region.capitalize()} - {ladder.capitalize()} - {hardcore.capitalize()}.")
                         continue
 
                     progress = data[0]['progress']
