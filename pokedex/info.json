@@ -5,7 +5,7 @@
     "short": "Display pokemon information",
     "description": "Displays information about Pokemon and Items using PokeAPI",
     "tags": ["utilities", "pokemon", "information", "pokeapi"],
-    "requirements": ["asyncio"],
+    "requirements": ["asyncio", "aiohttp", "aiocache"],
     "hidden": false,
     "min_bot_version": "3.5.0",
     "end_user_data_statement": "This cog does not persistently store user data."
