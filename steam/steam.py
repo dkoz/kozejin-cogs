@@ -1,6 +1,5 @@
 import discord
 from redbot.core import commands, Config, app_commands
-import requests
 import aiohttp
 from steam.steamid import SteamID
 from datetime import datetime

@@ -4,27 +4,34 @@ import openai
 import asyncio
 
 class DeckardCain(commands.Cog):
-    """Deckard Cain as ChatGPT"""
+    """Deckard Cain as ChatGPT
+    Make sure to create an API Key on [OpenAI Platform](https://platform.openai.com/)
+    You will need to configure a billing method and usage limits."""
 
-    __version__ = "1.0.4"
+    __version__ = "1.0.5"
 
     def __init__(self, bot):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)
+        self.config = Config.get_conf(self, identifier=1928374650)
         self.config.register_guild(api_key=None, allowed_channel=None)
 
     @commands.command()
     @commands.guild_only()
-    @commands.is_owner()
-    async def setcainapikey(self, ctx, api_key):
+    @commands.has_permissions(administrator=True)
+    async def setcainapikey(self, ctx, api_key: str):
         """Sets the API Key for OpenAI ChatGPT"""
-        if ctx.author == ctx.guild.owner:
-            await self.config.guild(ctx.guild).api_key.set(api_key)
-            await ctx.send("API key has been set successfully.")
-        else:
-            await ctx.send("Only the bot owner can set the OpenAI API key.")
-        
+
+        if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.send("I do not have permissions to delete messages in this channel.")
+            return
+
+        await self.config.guild(ctx.guild).api_key.set(api_key)
+        confirmation_message = await ctx.send("API key has been set successfully. This message will be deleted shortly.")
         await ctx.message.delete()
+
+        await asyncio.sleep(5)
+        await confirmation_message.delete()
+
 
     @commands.command()
     @commands.guild_only()
@@ -60,21 +67,23 @@ class DeckardCain(commands.Cog):
     async def generate_response(self, question, api_key):
         openai.api_key = api_key
 
-        prompt = ("You are Deckard Cain, the last of the Horadrim, a venerable and wise scholar in the world of Sanctuary from the Diablo series. "
-                  "Your life's work has been dedicated to studying ancient texts and uncovering the mysteries of the universe. "
-                  "Renowned for your deep understanding of arcane lore and the ancient struggle between Heaven and Hell, "
-                  "you serve as a guide to heroes, dispensing wisdom and insight drawn from your years of research. "
-                  "Despite the numerous dangers you've faced, your commitment to knowledge and truth remains unwavering, "
-                  "and you answer only Diablo-related questions."
-                  "\nUser: " + question + " ")
+        prompt = (f"You are Deckard Cain, the last of the Horadrim, a venerable and wise scholar in the world of Sanctuary from the Diablo series. "
+                "Your life's work has been dedicated to studying ancient texts and uncovering the mysteries of the universe. "
+                "Renowned for your deep understanding of arcane lore and the ancient struggle between Heaven and Hell, "
+                "you serve as a guide to heroes, dispensing wisdom and insight drawn from your years of research. "
+                "Despite the numerous dangers you've faced, your commitment to knowledge and truth remains unwavering, "
+                "and you answer only Diablo-related questions."
+                "\nUser: " + question + " ")
 
         try:
-            response = await asyncio.to_thread(openai.Completion.create, model="text-curie-001", prompt=prompt, max_tokens=476, temperature=0.5)
+            response = await openai.Completion.acreate(
+                model="gpt-3.5-turbo-instruct",
+                prompt=prompt,
+                max_tokens=476,
+                temperature=0.5
+            )
+            
             response_content = response.choices[0].text.strip()
-
-            response_content = "\n" + response_content
-
-            return response_content
+            return "\n" + response_content
         except Exception as e:
-            response_content = f"An error occurred: {str(e)}"
-            return response_content
+            return f"An error occurred: {str(e)}"
