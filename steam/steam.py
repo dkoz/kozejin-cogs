@@ -1,5 +1,6 @@
 import discord
 from redbot.core import commands, Config, app_commands
+import asyncio
 import aiohttp
 from steam.steamid import SteamID
 from datetime import datetime
@@ -23,14 +24,10 @@ class SteamAPI(commands.Cog):
         url = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={steam_api_key}&vanityurl={custom_url}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
-                if response.content_type != "application/json":
-                    if isinstance(ctx, discord.Interaction):
-                        await ctx.response.send_message("The Steam API key might not be set or there's an issue with the request. Please check the API key.")
-                    else:
-                        await ctx.send("The Steam API key might not be set or there's an issue with the request. Please check the API key.")
-                    return None
+                if response.status != 200:
+                    raise ValueError("Failed to resolve Steam vanity URL.")
                 data = await response.json()
-        return data['response']['steamid'] if 'response' in data and 'steamid' in data['response'] else None
+                return data.get('response', {}).get('steamid')
 
     async def get_steamid64(self, ctx, identifier):
         if identifier.isdigit():
@@ -40,32 +37,53 @@ class SteamAPI(commands.Cog):
             return str(steam_id.as_64)
         else:
             return await self.resolve_vanity_url(ctx, identifier)
-        
+
     @commands.command()
     @commands.guild_only()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def setsteamapikey(self, ctx, key: str):
         """Set the Steam API key for this guild (Server Owner Only)"""
+        
+        if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+            await ctx.send("I do not have permissions to delete messages in this channel.")
+            return
+
         await self.config.guild(ctx.guild).steam_api_key.set(key)
-        await ctx.send("Steam API key has been set for this guild.")
+        confirmation_message = await ctx.send("Steam API key has been set for this guild.")
+        await ctx.message.delete()
+
+        await asyncio.sleep(5)
+        await confirmation_message.delete()
 
     @app_commands.command(description="Search for user profiles on the Steam database.")
     async def steamprofile(self, interaction: discord.Interaction, identifier: str):
         """Search for user profiles on the steam database."""
         STEAM_API_KEY = await self.config.guild(interaction.guild).steam_api_key()
         if not STEAM_API_KEY:
-            await interaction.response.send_message("The Steam API key has not been set. Please set it using the `setsteamapikey` command.")
+            await interaction.response.send_message("The Steam API key has not been set. Please set it using the `[p]setsteamapikey` command.", ephemeral=True)
             return
 
-        steam_id64 = await self.get_steamid64(interaction, identifier)
+        try:
+            steam_id64 = await self.get_steamid64(interaction, identifier)
+        except ValueError as e:
+            await interaction.response.send_message(str(e), ephemeral=True)
+            return
+
         if steam_id64 is None:
-            await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.")
+            await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.", ephemeral=True)
             return
 
         async with aiohttp.ClientSession() as session:
             async with session.get(f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steam_id64}") as response:
+                if response.status != 200:
+                    await interaction.response.send_message("Failed to get player summaries.", ephemeral=True)
+                    return
                 data = await response.json()
+
             async with session.get(f"http://api.steampowered.com/ISteamUser/GetPlayerBans/v1/?key={STEAM_API_KEY}&steamids={steam_id64}") as response:
+                if response.status != 200:
+                    await interaction.response.send_message("Failed to get player bans.", ephemeral=True)
+                    return
                 ban_data = await response.json()
 
         if data and "response" in data and "players" in data["response"] and len(data["response"]["players"]) > 0:
@@ -98,7 +116,7 @@ class SteamAPI(commands.Cog):
             embed.set_footer(text="Powered by Steam")
             await interaction.response.send_message(embed=embed)
         else:
-            await interaction.response.send_message("Unable to fetch the player information.")
+            await interaction.response.send_message("Unable to fetch the player information.", ephemeral=True)
             
     @app_commands.command(description="Search for games on the Steam database.")
     async def steamgame(self, interaction: discord.Interaction, game_name: str):
@@ -147,6 +165,6 @@ class SteamAPI(commands.Cog):
 
                 await interaction.response.send_message(embed=embed)
             else:
-                await interaction.response.send_message("Unable to fetch the game information.")
+                await interaction.response.send_message("Unable to fetch the game information.", ephemeral=True)
         else:
-            await interaction.response.send_message("Game not found.")
+            await interaction.response.send_message("Game not found.", ephemeral=True)
