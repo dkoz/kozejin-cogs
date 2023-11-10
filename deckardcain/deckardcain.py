@@ -1,6 +1,6 @@
 import discord
 from redbot.core import commands, Config
-import openai
+from openai import AsyncOpenAI
 import asyncio
 
 class DeckardCain(commands.Cog):
@@ -65,7 +65,7 @@ class DeckardCain(commands.Cog):
 
 
     async def generate_response(self, question, api_key):
-        openai.api_key = api_key
+        client = AsyncOpenAI(api_key=api_key)
 
         prompt = (f"You are Deckard Cain, the last of the Horadrim, a venerable and wise scholar in the world of Sanctuary from the Diablo series. "
                 "Your life's work has been dedicated to studying ancient texts and uncovering the mysteries of the universe. "
@@ -76,7 +76,7 @@ class DeckardCain(commands.Cog):
                 "\nUser: " + question + " ")
 
         try:
-            response = await openai.Completion.acreate(
+            response = await client.completions.create(
                 model="gpt-3.5-turbo-instruct",
                 prompt=prompt,
                 max_tokens=476,
