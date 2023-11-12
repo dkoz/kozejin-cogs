@@ -15,12 +15,12 @@ class SteamAPI(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=65847657, force_registration=True)
-        default_guild = {"steam_api_key": None}
-        self.config.register_guild(**default_guild)
+        self.config = Config.get_conf(self, identifier=67485765, force_registration=True)
+        default_global = {"steam_api_key": None}
+        self.config.register_global(**default_global)
 
     async def resolve_vanity_url(self, ctx, custom_url):
-        steam_api_key = await self.config.guild(ctx.guild).steam_api_key()
+        steam_api_key = await self.config.steam_api_key()
         url = f"http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={steam_api_key}&vanityurl={custom_url}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
@@ -48,8 +48,8 @@ class SteamAPI(commands.Cog):
             await ctx.send("I do not have permissions to delete messages in this channel.")
             return
 
-        await self.config.guild(ctx.guild).steam_api_key.set(key)
-        confirmation_message = await ctx.send("Steam API key has been set for this guild.")
+        await self.config.steam_api_key.set(key)
+        confirmation_message = await ctx.send("Steam API key has been set for this bot.")
         await ctx.message.delete()
 
         await asyncio.sleep(5)
@@ -58,7 +58,7 @@ class SteamAPI(commands.Cog):
     @app_commands.command(description="Search for user profiles on the Steam database.")
     async def steamprofile(self, interaction: discord.Interaction, identifier: str):
         """Search for user profiles on the steam database."""
-        STEAM_API_KEY = await self.config.guild(interaction.guild).steam_api_key()
+        STEAM_API_KEY = await self.config.steam_api_key()
         if not STEAM_API_KEY:
             await interaction.response.send_message("The Steam API key has not been set. Please set it using the `[p]setsteamapikey` command.", ephemeral=True)
             return
