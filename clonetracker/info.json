@@ -6,6 +6,7 @@
     "description": "Uber/Clone Tracker for Diablo 2: Resurrected",
     "tags": ["utilities", "diablo", "fun", "games"],
     "requirements": ["asyncio", "aiohttp", "aiocache"],
+    "disabled": false,
     "hidden": false,
     "min_bot_version": "3.5.0",
     "end_user_data_statement": "This cog does not persistently store user data."

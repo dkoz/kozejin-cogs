@@ -5,6 +5,7 @@
     "short": "Create discord timestamps",
     "description": "Create discord timestamps with a slash command.",
     "tags": ["utilities", "timestamps", "time", "date"],
+    "disabled": false,
     "hidden": false,
     "min_bot_version": "3.5.0",
     "end_user_data_statement": "This cog does not persistently store user data."
