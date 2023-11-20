@@ -1,9 +1,25 @@
+import asyncio
 import discord
 from redbot.core import commands
+import logging
 
 class Speaker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandInvokeError):
+            original = error.original
+            if isinstance(original, discord.HTTPException):
+                await ctx.send("An HTTP error occurred: " + str(original))
+            elif isinstance(original, discord.Forbidden):
+                await ctx.send("I do not have permission to do that.")
+            else:
+                logging.error(f"An error occurred: {original}")
+                await ctx.send("An unexpected error occurred. Please contact the bot administrator.")
+        elif isinstance(error, commands.CheckFailure):
+            await ctx.send("You do not have the required permissions to use this command.")
 
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -26,27 +42,17 @@ class Speaker(commands.Cog):
         try:
             await ctx.message.delete()
             await destination.send(content=content)
-        except Forbidden:
+        except discord.Forbidden:
             await ctx.send("I'm missing permissions to complete this action.")
 
     @speak_group.command(name="embed")
     async def speak_embed(self, ctx, destination: discord.TextChannel):
-        """Create an embedded message as the bot."""
+        """Create an embedded message as the bot with additional options."""
         if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await ctx.send("I do not have permission to delete messages in this channel.")
             return
         
-        await ctx.message.delete()
-        await ctx.send("Please enter the title for the embedded message:")
-        try:
-            title = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
-            await ctx.send("Please enter the description for the embedded message:")
-            description = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
-        except TimeoutError:
-            await ctx.send("Embed creation timed out.")
-            return
-
-        embed = discord.Embed(title=title.content, description=description.content)
+        embed = await self.create_or_edit_embed(ctx)
         await destination.send(embed=embed)
 
     @speak_group.command(name="edit")
@@ -54,81 +60,147 @@ class Speaker(commands.Cog):
         """Edit a message sent by the bot."""
         try:
             message = await channel.fetch_message(message_id)
-        except Exception:
+        except discord.NotFound:
             await ctx.send("Could not find the specified message.")
             return
 
-        if message.author == self.bot.user:
-            await self.edit_embed_message(ctx, message, new_content)
-        else:
+        if message.author != self.bot.user:
             await ctx.send("You can only edit messages sent by the bot.")
+            return
+
+        if message.embeds:
+            await ctx.send("This command only works for non-embedded messages. Use 'editembed' for embedded messages.")
+        else:
+            await self.edit_message(ctx, message, new_content)
 
     @speak_group.command(name="editembed")
     async def speak_edit_embed(self, ctx, channel: discord.TextChannel, message_id: int):
-        """Edit the embedded message sent by the bot."""
+        """Edit the embedded message sent by the bot with additional options."""
         try:
             message = await channel.fetch_message(message_id)
-        except Exception:
+        except discord.NotFound:
             await ctx.send("Could not find the specified message.")
             return
 
-        if message.author == self.bot.user:
-            await self.edit_entire_embed_message(ctx, message)
-        else:
+        if message.author != self.bot.user:
             await ctx.send("You can only edit messages sent by the bot.")
+            return
 
-    async def edit_embed_message(self, ctx, message: discord.Message, new_content: str):
-        if message.embeds:
-            embed = message.embeds[0]
-            if embed.title:
-                embed.title = new_content
-                await message.edit(embed=embed)
-                await ctx.send("Embedded message title edited.")
-            else:
-                embed.description = new_content
-                await message.edit(embed=embed)
-                await ctx.send("Embedded message description edited.")
-        else:
-            await message.edit(content=new_content)
-            await ctx.send("Message edited.")
-
-    async def edit_entire_embed_message(self, ctx, message):
         if message.embeds:
             old_embed = message.embeds[0]
-            await ctx.send("Please enter the new title for the embedded message:")
-            new_title = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
-            await ctx.send("Please enter the new description for the embedded message:")
-            new_description = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
-
-            embed = discord.Embed(title=new_title.content, description=new_description.content)
-            if old_embed.color is not None:
-                embed.color = old_embed.color
-            if old_embed.timestamp is not None:
-                embed.timestamp = old_embed.timestamp
-
-            await message.edit(embed=embed)
+            new_embed = await self.create_or_edit_embed(ctx, old_embed)
+            await message.edit(embed=new_embed)
             await ctx.send("Embedded message edited.")
         else:
             await ctx.send("The specified message does not have an embed.")
-            
+
+    async def edit_message(self, ctx, message: discord.Message, new_content: str):
+        await message.edit(content=new_content)
+        await ctx.send("Message edited.")
+
+    async def create_or_edit_embed(self, ctx, embed=None):
+        if embed is None:
+            embed = discord.Embed()
+
+        current_title = embed.title if embed.title else "No title set"
+        await ctx.send(f"Current title: {current_title}\nPlease enter the new title (or type 'skip' to keep the current one):")
+        try:
+            title = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            if title.content.lower() != 'skip':
+                embed.title = title.content
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+            return
+
+        current_description = embed.description if embed.description else "No description set"
+        await ctx.send(f"Current description: {current_description}\nPlease enter the new description (or type 'skip' to keep the current one):")
+        try:
+            description = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            if description.content.lower() != 'skip':
+                embed.description = description.content
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+            return
+
+        current_thumbnail = embed.thumbnail.url if embed.thumbnail else "No thumbnail set"
+        await ctx.send(f"Current thumbnail URL: {current_thumbnail}\nPlease enter the new thumbnail URL (or type 'skip' to keep the current one):")
+        try:
+            thumbnail_url = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            if thumbnail_url.content.lower() != 'skip':
+                embed.set_thumbnail(url=thumbnail_url.content)
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+            return
+
+        current_image = embed.image.url if embed.image else "No image set"
+        await ctx.send(f"Current image URL: {current_image}\nPlease enter the new image URL (or type 'skip' to keep the current one):")
+        try:
+            image_url = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            if image_url.content.lower() != 'skip':
+                embed.set_image(url=image_url.content)
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+            return
+
+        for i, field in enumerate(list(embed.fields)):
+            await ctx.send(f"Field {i+1} - Name: {field.name}\nValue: {field.value}\nInline: {field.inline}\nType 'edit' to edit this field, 'delete' to remove it, or 'skip' to keep it as is.")
+            try:
+                response = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                if response.content.lower() == 'edit':
+                    await ctx.send("Enter the new name for the field:")
+                    new_name = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                    await ctx.send("Enter the new value for the field:")
+                    new_value = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                    await ctx.send("Should this field be inline? (yes/no):")
+                    new_inline = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                    embed.set_field_at(i, name=new_name.content, value=new_value.content, inline=new_inline.content.lower() == 'yes')
+                elif response.content.lower() == 'delete':
+                    embed.remove_field(i)
+            except asyncio.TimeoutError:
+                await ctx.send("Operation timed out. Please try again.")
+                return
+
+        await ctx.send("How many additional fields do you want to add? (Enter a number or type '0' to skip):")
+        try:
+            num_fields = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+            for _ in range(int(num_fields.content)):
+                await ctx.send("Enter the name of the field:")
+                field_name = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                await ctx.send("Enter the value of the field:")
+                field_value = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                await ctx.send("Should this field be inline? (yes/no):")
+                field_inline = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
+                embed.add_field(name=field_name.content, value=field_value.content, inline=field_inline.content.lower() == 'yes')
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+            return
+
+        return embed
+
     @speak_group.command(name="addbutton")
     async def speak_add_button(self, ctx, channel: discord.TextChannel, message_id: int):
         """Add a button to an existing embedded message sent by the bot."""
         try:
             message = await channel.fetch_message(message_id)
-        except Exception:
+        except discord.NotFound:
             await ctx.send("Could not find the specified message.")
             return
+        except discord.HTTPException as e:
+            await ctx.send(f"An HTTP error occurred: {e}")
+            return
 
-        if message.author == self.bot.user and message.embeds:
-            old_embed = message.embeds[0]
-            new_embed = discord.Embed(title=old_embed.title, description=old_embed.description, color=old_embed.color, timestamp=old_embed.timestamp)
+        if message.author != self.bot.user or not message.embeds:
+            await ctx.send("You can only add buttons to embedded messages sent by the bot.")
+            return
 
-            view = discord.ui.View()
+        old_embed = message.embeds[0]
+        new_embed = discord.Embed.from_dict(old_embed.to_dict())
 
+        view = discord.ui.View()
+
+        try:
             await ctx.send("Please enter the number of buttons you want to add:")
             num_buttons = await self.bot.wait_for("message", check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60.0)
-            
             num_buttons = int(num_buttons.content)
 
             for i in range(num_buttons):
@@ -148,10 +220,11 @@ class Speaker(commands.Cog):
                 link_button = LinkButton()
                 view.add_item(link_button)
 
-            await message.edit(
-                embed=new_embed,
-                view=view
-            )
+            await message.edit(embed=new_embed, view=view)
             await ctx.send("Buttons added to embedded message.")
-        else:
-            await ctx.send("You can only add buttons to embedded messages sent by the bot.")
+        except asyncio.TimeoutError:
+            await ctx.send("Operation timed out. Please try again.")
+        except ValueError:
+            await ctx.send("Invalid number of buttons. Please enter a valid number.")
+        except discord.HTTPException as e:
+            await ctx.send(f"An HTTP error occurred: {e}")
