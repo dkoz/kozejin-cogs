@@ -29,6 +29,7 @@ Cog | Description
 CloneTracker | Track Diablo Clone/Uber Diablo
 Pokedex | Search for your favorite pokemon or item info
 Deckard Cain | Chat with Deckard Cain on ChatGPT
+Speaker | Send and edit messages, embeds and buttons as the bot.
 Timestamps | Create discord timestamps
 SteamApp | Look up steam games and steam user profiles
 

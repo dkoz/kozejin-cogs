@@ -1,0 +1,10 @@
+{
+  "author": ["Kozejin"],
+  "install_msg": "Installed Speaker! \nType `[p]speak` for list of commands.",
+  "name": "Speaker",
+  "short": "Send messages as the bot.",
+  "description": "Send and edit messages/embeds as the bot.",
+  "tags": ["utility", "embed", "speaker", "message"],
+  "min_bot_version": "3.5.0",
+  "end_user_data_statement": "This cog does not persistently store user data."
+}
