@@ -1,0 +1,12 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Thank you for installing my permissions cloner.\n Type [p]help ClonePermissions for more info.",
+    "name": "ClonePermissions",
+    "short": "Clone permissions from one channel to another.",
+    "description": "Clone permissions from one channel to another.",
+    "tags": ["utilities"],
+    "disabled": false,
+    "hidden": false,
+    "min_bot_version": "3.5.0",
+    "end_user_data_statement": "This cog does not persistently store user data."
+}
