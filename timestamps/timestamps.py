@@ -1,7 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import discord
 from dateutil.parser import parse
+from pytz import timezone, all_timezones_set
 from redbot.core import commands, app_commands
+from .timezones import timezone_abbreviations
 
 class TimestampPy(commands.Cog):
     def __init__(self, bot):
@@ -20,22 +22,26 @@ class TimestampPy(commands.Cog):
     ])
     async def timestamp(self, interaction: discord.Interaction, date: str, format: app_commands.Choice[str]):
         try:
-            date, tz = date.rsplit(' ', 1)
-            date = parse(date)
+            date_str, tz_str = date.rsplit(' ', 1)
+            parsed_date = parse(date_str)
+            tz_str = tz_str.lower()
+
+            if tz_str in timezone_abbreviations:
+                tz = timezone(timezone_abbreviations[tz_str])
+            elif tz_str in all_timezones_set:
+                tz = timezone(tz_str)
+            else:
+                await interaction.response.send_message("Invalid or unsupported timezone.", ephemeral=True)
+                return
+
+            localized_date = tz.localize(parsed_date)
+            utc_date = localized_date.astimezone(timezone('UTC'))
+
         except ValueError:
             await interaction.response.send_message("Invalid date format.", ephemeral=True)
             return
 
-        tz = tz.lower()
-        if tz in ['est', 'cst', 'pst']:
-            offsets = {'est': -5, 'cst': -6, 'pst': -8}
-            offset = offsets[tz]
-
-            if datetime(date.year, 3, 14, 2) <= date < datetime(date.year, 11, 7, 2):
-                offset += 1
-            date -= timedelta(hours=offset)
-
-        timestamp = int(date.timestamp())
+        timestamp = int(utc_date.timestamp())
         timestamp_code = f"<t:{timestamp}:{format.value}>"
 
         embed = discord.Embed(
