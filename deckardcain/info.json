@@ -5,7 +5,7 @@
     "short": "Deckard Cain cog built on OpenAI",
     "description": "Deckard Cain cog built on OpenAI",
     "tags": ["chatgpt", "openai", "deckard", "cain", "diablo"],
-    "requirements": ["openai==1.2.3", "asyncio"],
+    "requirements": ["openai==1.2.3"],
     "disabled": false,
     "hidden": false,
     "min_bot_version": "3.5.0",
