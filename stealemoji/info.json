@@ -1,0 +1,13 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Thank you for installing the Steal Emoji cog!\n Type `[p]help EmojiStealer` to get started.",
+    "name": "stealemoji",
+    "short": "Steal emojis from other servers",
+    "description": "Steal emojis from other servers",
+    "tags": ["utility", "emoji"],
+    "requirements": ["aiohttp"],
+    "disabled": false,
+    "hidden": false,
+    "min_bot_version": "3.5.0",
+    "min_python_version": [3,9,0]
+}
