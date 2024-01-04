@@ -20,10 +20,10 @@ class GaiaIntegration(commands.Cog):
     async def gaia_avatar(self, ctx, *, username: str):
         """Search up an avatar on Gaia Online"""
         encoded_username = urllib.parse.quote(username)
-        url = f"https://www.gaiaonline.com/profiles/{encoded_username}"
+        profile_url = f"https://www.gaiaonline.com/profiles/{encoded_username}"
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+            async with session.get(profile_url) as response:
                 if response.status != 200:
                     await ctx.send(f'Error: Unable to retrieve avatar. HTTP Status: {response.status}')
                     return
@@ -48,7 +48,7 @@ class GaiaIntegration(commands.Cog):
                     return
 
                 if avatar_img:
-                    embed = discord.Embed(title=f'{username}\'s Avatar', color=discord.Color.blue())
+                    embed = discord.Embed(title=f'{username}\'s Avatar', url=profile_url, color=discord.Color.blue())
                     embed.set_image(url=avatar_img)
                     await ctx.send(embed=embed)
                 else:

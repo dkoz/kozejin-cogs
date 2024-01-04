@@ -36,6 +36,7 @@ Timestamps | Create discord timestamps
 SteamApp | Look up steam games and steam user profiles
 ClonePerms | Cog for cloning permissions, either from one channel to another or from one role to another.
 StealEmoji | Allows you to upload emojis from one server to another.
+GaiaOnline | Search up Gaia Online profiles and avatars.
 
 # Credits
 [Jintaku](https://github.com/Jintaku) for making original pokedex cog
