@@ -1,7 +1,7 @@
 {
     "author": ["Kozejin"],
     "install_msg": "Thank you for installing my Gaia Online Cog!\n Use `[p]go` to get started!",
-    "name": "GaiuOnline",
+    "name": "GaiaOnline",
     "short": "Display your gaia online avatar!",
     "description": "Display your gaia online avatar and profile!",
     "tags": ["gaiaonline", "utilities"],
