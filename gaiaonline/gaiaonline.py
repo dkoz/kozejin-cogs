@@ -37,10 +37,8 @@ class GaiaIntegration(commands.Cog):
                 avatar_img = None
                 try:
                     for img in soup.find_all('img', alt=True):
-                        alt_text = img['alt'].lower()
-                        expected_alt_exact = username.lower()
-                        expected_alt_avatar = f"{username.lower()}'s avatar"
-                        if alt_text == expected_alt_exact or alt_text == expected_alt_avatar:
+                        alt_text = img['alt']
+                        if username.lower() in alt_text.lower():
                             avatar_img = img['src']
                             break
                 except Exception as e:
@@ -48,7 +46,7 @@ class GaiaIntegration(commands.Cog):
                     return
 
                 if avatar_img:
-                    embed = discord.Embed(title=f'{username}\'s Avatar', url=profile_url, color=discord.Color.blue())
+                    embed = discord.Embed(title=f'{username}', url=profile_url, color=discord.Color.blue())
                     embed.set_image(url=avatar_img)
                     await ctx.send(embed=embed)
                 else:
