@@ -29,7 +29,7 @@ class EpicGamesNotifier(commands.Cog):
                 if channel_id:
                     channel = self.bot.get_channel(channel_id)
                     if channel:
-                        new_games = await self.check_for_new_games(guild)
+                        new_games = await self.check_new_games(guild)
                         if new_games:
                             for game in new_games:
                                 embed = self.create_game_embed(game)
@@ -62,7 +62,7 @@ class EpicGamesNotifier(commands.Cog):
 
         return embed
 
-    async def check_for_new_games(self, guild):
+    async def check_new_games(self, guild):
         url = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
@@ -94,6 +94,3 @@ class EpicGamesNotifier(commands.Cog):
                 else:
                     print(f"Failed to fetch free games: {response.status}")
                     return None
-
-def setup(bot):
-    bot.add_cog(EpicGamesAPI(bot))
