@@ -8,7 +8,8 @@ class BattleMetricsCog(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=3859612489, force_registration=True)
         default_guild = {
-            "servers": []
+            "servers": [],
+            "bearer_token": ""
         }
         self.config.register_guild(**default_guild)
         self.update_server_info.start()
@@ -76,16 +77,23 @@ class BattleMetricsCog(commands.Cog):
 
                     except Exception as e:
                         await self.send_debug_message(f"Error updating server info: {e}")
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_owner()
+    async def setbearertoken(self, ctx, token: str):
+        """Sets the BattleMetrics bearer token for the guild."""
+        await self.config.guild(ctx.guild).bearer_token.set(token)
+        await ctx.send("Bearer token set successfully.")
                         
     @commands.command()
     @commands.guild_only()
     @commands.is_owner()
-    async def setserver(self, ctx, battlemetrics_server_id: str, discord_channel_id: int, bearer_token: str, embed_image_url: str):
+    async def setserver(self, ctx, battlemetrics_server_id: str, discord_channel_id: int, embed_image_url: str):
         """Sets the server configuration."""
         new_server = {
             "battlemetrics_server_id": battlemetrics_server_id,
             "discord_channel_id": discord_channel_id,
-            "bearer_token": bearer_token,
             "embed_image_url": embed_image_url,
             "message_id": None
         }
@@ -99,6 +107,10 @@ class BattleMetricsCog(commands.Cog):
     async def rcon(self, ctx, server_id: str, *, command: str):
         """Sends an RCON command to the specified server."""
         bmapi = battlemetrics
+        bearer_token = await self.config.guild(ctx.guild).bearer_token()
+        if not bearer_token:
+            await ctx.send("Bearer token not set. Use `setbearertoken` to set it.")
+            return
 
         servers = await self.config.guild(ctx.guild).servers()
         server_config = next((s for s in servers if s['battlemetrics_server_id'] == server_id), None)
