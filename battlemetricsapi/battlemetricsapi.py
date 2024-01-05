@@ -19,9 +19,13 @@ class BattleMetricsCog(commands.Cog):
         if debug_channel:
             await debug_channel.send(message)
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes=5)
     async def update_server_info(self):
         for guild in self.bot.guilds:
+            bearer_token = await self.config.guild(guild).bearer_token()
+            if not bearer_token:
+                continue
+
             async with self.config.guild(guild).servers() as servers:
                 if not servers:
                     continue
@@ -29,7 +33,7 @@ class BattleMetricsCog(commands.Cog):
                 for server in servers:
                     try:
                         bmapi = battlemetrics
-                        await bmapi.setup(server['bearer_token'])
+                        await bmapi.setup(bearer_token)
 
                         response = await bmapi.server_info(server['battlemetrics_server_id'])
                         if 'data' in response:
@@ -112,6 +116,8 @@ class BattleMetricsCog(commands.Cog):
             await ctx.send("Bearer token not set. Use `setbearertoken` to set it.")
             return
 
+        await bmapi.setup(bearer_token)
+
         servers = await self.config.guild(ctx.guild).servers()
         server_config = next((s for s in servers if s['battlemetrics_server_id'] == server_id), None)
 
@@ -119,7 +125,6 @@ class BattleMetricsCog(commands.Cog):
             await ctx.send("Server configuration not found.")
             return
 
-        await bmapi.setup(server_config['bearer_token'])
         response = await bmapi.server_send_console_command(server_id=server_id, command=command)
 
         if 'errors' in response:
@@ -134,6 +139,14 @@ class BattleMetricsCog(commands.Cog):
     @commands.is_owner()
     async def banlist(self, ctx, battlemetrics_server_id: str):
         """Fetches and displays the ban list for the specified server."""
+        bmapi = battlemetrics
+        bearer_token = await self.config.guild(ctx.guild).bearer_token()
+        if not bearer_token:
+            await ctx.send("Bearer token not set. Use `setbearertoken` to set it.")
+            return
+
+        await bmapi.setup(bearer_token)
+
         servers = await self.config.guild(ctx.guild).servers()
         server_config = next((s for s in servers if s['battlemetrics_server_id'] == battlemetrics_server_id), None)
 
@@ -142,8 +155,6 @@ class BattleMetricsCog(commands.Cog):
             return
 
         try:
-            bmapi = battlemetrics
-            await bmapi.setup(server_config['bearer_token'])
             response = await bmapi.ban_list(battlemetrics_server_id)
 
             if 'data' in response:
