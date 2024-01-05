@@ -28,6 +28,7 @@ Now install the cog you want to use.
 
 Cog | Description
 --- | ---
+BattleMetricsAPI | Track your game servers, access remote rcon, and more from the BattleMetrics API.
 CloneTracker | Track Diablo Clone/Uber Diablo
 Pokedex | Search for your favorite pokemon or item info
 Deckard Cain | Chat with Deckard Cain on ChatGPT
