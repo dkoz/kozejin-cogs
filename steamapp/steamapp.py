@@ -29,14 +29,14 @@ class SteamAPI(commands.Cog):
                 data = await response.json()
                 return data.get('response', {}).get('steamid')
 
-    async def get_steamid64(self, ctx, identifier):
-        if identifier.isdigit():
-            return identifier
-        elif identifier.startswith('STEAM_'):
-            steam_id = SteamID(identifier)
+    async def get_steamid64(self, ctx, steam):
+        if steam.isdigit():
+            return steam
+        elif steam.startswith('STEAM_'):
+            steam_id = SteamID(steam)
             return str(steam_id.as_64)
         else:
-            return await self.resolve_vanity_url(ctx, identifier)
+            return await self.resolve_vanity_url(ctx, steam)
 
     @commands.command()
     @commands.guild_only()
@@ -56,7 +56,7 @@ class SteamAPI(commands.Cog):
         await confirmation_message.delete()
 
     @app_commands.command(description="Search for user profiles on the Steam database.")
-    async def steamprofile(self, interaction: discord.Interaction, identifier: str):
+    async def steamprofile(self, interaction: discord.Interaction, steam: str):
         """Search for user profiles on the steam database."""
         STEAM_API_KEY = await self.config.steam_api_key()
         if not STEAM_API_KEY:
@@ -64,13 +64,13 @@ class SteamAPI(commands.Cog):
             return
 
         try:
-            steam_id64 = await self.get_steamid64(interaction, identifier)
+            steam_id64 = await self.get_steamid64(interaction, steam)
         except ValueError as e:
             await interaction.response.send_message(str(e), ephemeral=True)
             return
 
         if steam_id64 is None:
-            await interaction.response.send_message("Invalid identifier. Please provide a valid SteamID64, SteamID, or custom URL.", ephemeral=True)
+            await interaction.response.send_message("Invalid steam profile. Please provide a valid SteamID64, SteamID, or custom URL.", ephemeral=True)
             return
 
         async with aiohttp.ClientSession() as session:
@@ -119,15 +119,24 @@ class SteamAPI(commands.Cog):
             await interaction.response.send_message("Unable to fetch the player information.", ephemeral=True)
             
     @app_commands.command(description="Search for games on the Steam database.")
-    async def steamgame(self, interaction: discord.Interaction, game_name: str):
+    async def steamgame(self, interaction: discord.Interaction, game: str):
         """Search for games on the steam database."""
-        url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={game_name}"
+        url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={game}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
 
         if data and data.get('total') > 0:
-            appid = data['items'][0]['id']
+            best_match = None
+            for item in data['items']:
+                if item['name'].lower() == game.lower():
+                    best_match = item
+                    break
+
+            if not best_match:
+                best_match = data['items'][0]
+
+            appid = best_match['id']
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=us") as response:
@@ -148,19 +157,13 @@ class SteamAPI(commands.Cog):
                 if len(about_the_game) > 1024:
                     about_the_game = about_the_game[:1021] + "..."
                 embed.add_field(name="About This Game", value=about_the_game, inline=False)
-
-                embed.add_field(name="App ID", value=appid, inline=True)
-                embed.add_field(name="Release Date", value=game_info['release_date']['date'], inline=True)
                 embed.add_field(name="Price", value=f"{game_info['price_overview']['final_formatted'] if 'price_overview' in game_info else 'Free'}", inline=True)
-
-                embed.add_field(name="Release Date", value=game_info['release_date']['date'], inline=True)
                 embed.add_field(name="Publisher", value=", ".join(game_info['publishers']), inline=True)
                 embed.add_field(name="Developer", value=", ".join(game_info['developers']), inline=True)
-
-                embed.add_field(name="\u200b", value="\u200b", inline=True)
-                embed.add_field(name="\u200b", value="\u200b", inline=True)
-                embed.add_field(name="\u200b", value="\u200b", inline=True)
-
+                embed.add_field(name="Release Date", value=game_info['release_date']['date'], inline=True)
+                embed.add_field(name="App ID", value=appid, inline=True)
+                embed.add_field(name="Required Age", value=f"{game_info['required_age']}+" if game_info['required_age'] else "None", inline=True)
+                embed.add_field(name="Platforms", value=", ".join([platform.capitalize() for platform, available in game_info['platforms'].items() if available]), inline=False)
                 embed.set_footer(text="Powered by Steam")
 
                 await interaction.response.send_message(embed=embed)
