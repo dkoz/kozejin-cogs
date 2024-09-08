@@ -1,0 +1,13 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Thank you for installing MinecraftAPI!\n Type `[p]help MinecraftAPI` to see the commands.",
+    "name": "MinecraftAPI",
+    "short": "Look up Minecraft player and server information.",
+    "description": "Search Minecraft player profiles, skins, capes, and server status using the Mojang API.",
+    "tags": ["utilities", "minecraft", "mojang", "mcstatus"],
+    "requirements": ["mojang", "mcstatus"],
+    "disabled": false,
+    "hidden": false,
+    "min_bot_version": "3.5.0",
+    "end_user_data_statement": "This cog does not persistently store user data."
+}
