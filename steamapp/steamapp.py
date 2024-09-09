@@ -4,12 +4,16 @@ import asyncio
 import aiohttp
 from steam.steamid import SteamID
 from datetime import datetime
+from .steammodal import SteamAPIKeyModal
 
 class SteamAPI(commands.Cog):
     """Search for games and player profiles.
 
-    Grab your Steam [API Key](https://steamcommunity.com/dev/apikey).
-    Use the command `[p]setsteamapikey <key here>` to set it."""
+    Grab your [Steam API Key](https://steamcommunity.com/dev/apikey).
+    Use the command `[p]setsteamapikey <key here>` to set it.
+    
+    Then enable the app commands using `[p]slash enablecog steamapp` and `[p]slash sync`.
+    You can also enable specific commands; Example: `[p]slash enable steamprofile`."""
 
     __version__ = "1.0.1"
 
@@ -39,8 +43,7 @@ class SteamAPI(commands.Cog):
             return await self.resolve_vanity_url(ctx, steam)
 
     @commands.command()
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
+    @commands.is_owner()
     async def setsteamapikey(self, ctx, key: str):
         """Set the Steam API key for this guild (Server Owner Only)"""
         
@@ -54,6 +57,20 @@ class SteamAPI(commands.Cog):
 
         await asyncio.sleep(5)
         await confirmation_message.delete()
+        
+    @app_commands.command(description="Set the Steam API key.")
+    @app_commands.guild_only()
+    async def steamapikey(self, interaction: discord.Interaction):
+        """Open a modal to set the Steam API key (Bot Owner Only)."""
+        if interaction.user.id != interaction.client.application.owner.id:
+            await interaction.response.send_message("You are not the bot owner.", ephemeral=True)
+            return
+
+        try:
+            modal = SteamAPIKeyModal(config=self.config)
+            await interaction.response.send_modal(modal)
+        except Exception as e:
+            await interaction.followup.send(str(e), ephemeral=True)
 
     @app_commands.command(description="Search for user profiles on the Steam database.")
     async def steamprofile(self, interaction: discord.Interaction, steam: str):
