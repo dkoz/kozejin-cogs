@@ -6,12 +6,15 @@ from redbot.core import commands, app_commands
 from .timezones import timezone_abbreviations
 
 class TimestampPy(commands.Cog):
+    """Create a timestamp from a date and timezone."""
+
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command()
-    @app_commands.describe(date="Example: November 7th at 12 pm est", format="The format of the timestamp")
+    @app_commands.command(description="Create a timestamp from a date and timezone.")
+    @app_commands.describe(date="Example: November 7th at 12 pm est", format="The format of the timestamp or all formats.")
     @app_commands.choices(format=[
+        app_commands.Choice(name="All Formats", value="all"),
         app_commands.Choice(name="Short Time", value="t"),
         app_commands.Choice(name="Long Time", value="T"),
         app_commands.Choice(name="Short Date", value="d"),
@@ -42,12 +45,33 @@ class TimestampPy(commands.Cog):
             return
 
         timestamp = int(utc_date.timestamp())
-        timestamp_code = f"<t:{timestamp}:{format.value}>"
 
-        embed = discord.Embed(
-            title="Timestamp",
-            description=f"Your date: {timestamp_code}\nYour format: {format.name}\nYour timestamp: `{timestamp_code}`",
-            color=discord.Color.blue(),
-        )
+        if format.value == "all":
+            all_formats = {
+                "Short Time": f"<t:{timestamp}:t>",
+                "Long Time": f"<t:{timestamp}:T>",
+                "Short Date": f"<t:{timestamp}:d>",
+                "Long Date": f"<t:{timestamp}:D>",
+                "Short Date/Time": f"<t:{timestamp}:f>",
+                "Long Date/Time": f"<t:{timestamp}:F>",
+                "Relative Time": f"<t:{timestamp}:R>"
+            }
+            
+            embed = discord.Embed(
+                title="Timestamps in All Formats",
+                color=discord.Color.blue()
+            )
+            
+            for name, code in all_formats.items():
+                embed.add_field(name=name, value=f"{code}\n`{code}`", inline=False)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            timestamp_code = f"<t:{timestamp}:{format.value}>"
+            embed = discord.Embed(
+                title="Timestamp",
+                description=f"**{format.name}**\n{timestamp_code}\n`{timestamp_code}`",
+                color=discord.Color.blue(),
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
