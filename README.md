@@ -1,7 +1,7 @@
 # Kozejin-Cogs
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fdkoz%2Fkozejin-cogs&countColor=%23263759&style=plastic) ![Discord](https://img.shields.io/discord/1009881575187566632?style=plastic)
 
-All cogs on this repo were created for [Jackalope Bot](https://jackabot.xyz), my personal instance of Red-DiscordBot. This is not an approved repo, so all support must be done through my personal [discord server](https://discord.gg/3HUq8cJSrX).
+All cogs on this repo were created for [Jyakku Bot](https://jyakku.com), my personal instance of Red-DiscordBot. This is not an approved repo, so all support must be done through my personal [discord server](https://discord.gg/3HUq8cJSrX).
 
 # Installation
 
@@ -30,7 +30,7 @@ Cog | Description
 --- | ---
 BattleMetricsAPI | Track your game servers, access remote rcon, and more from the BattleMetrics API.
 CloneTracker | Track Diablo Clone/Uber Diablo
-Pokedex | Search for your favorite pokemon or item info
+Pokedex | Search for your favorite pokemon, movesets or item info.
 Deckard Cain | Chat with Deckard Cain on ChatGPT
 Speaker | Send and edit messages, embeds and buttons as the bot.
 Timestamps | Create discord timestamps
@@ -38,7 +38,7 @@ SteamApp | Look up steam games and steam user profiles
 ClonePerms | Cog for cloning permissions, either from one channel to another or from one role to another.
 StealEmoji | Allows you to upload emojis from one server to another.
 GaiaOnline | Search up Gaia Online profiles and avatars.
-EpicGamesNotifier | Notify your server members when free games become available on Epic Games.
+MinecraftAPI | Look up Minecraft player profiles, skins, and capes, or query a game server for information.
 
 # Credits
 [Jintaku](https://github.com/Jintaku) for making original pokedex cog
