@@ -59,10 +59,21 @@ class AutoVoice(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         trigger_channel_id = await self.config.guild(member.guild).trigger_channel_id()
+
+        if before.channel and before.channel.id in self.bot.created_channels:
+            old_channel = before.channel
+        else:
+            old_channel = None
+
         if after.channel and after.channel.id == trigger_channel_id:
             new_channel = await member.guild.create_voice_channel(name=f"{member.display_name}'s channel", category=after.channel.category)
             self.bot.created_channels.add(new_channel.id)
             await member.move_to(new_channel)
+
+            if old_channel and len(old_channel.members) == 0:
+                await old_channel.delete()
+                self.bot.created_channels.remove(old_channel.id)
+
         elif before.channel and len(before.channel.members) == 0 and before.channel.id in self.bot.created_channels:
             await before.channel.delete()
             self.bot.created_channels.remove(before.channel.id)
