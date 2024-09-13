@@ -25,15 +25,34 @@ class DeckardCain(commands.Cog):
     @cainset.command()
     async def apikey(self, ctx, api_key: str):
         """Sets the API Key for OpenAI"""
-        if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
-            await ctx.send("I do not have permissions to delete messages in this channel.")
-            return
+        try:
+            if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
+                await ctx.send("I do not have permissions to delete messages in this channel.")
+                return
 
-        await self.config.guild(ctx.guild).api_key.set(api_key)
-        confirmation_message = await ctx.send("API key has been set successfully. This message will be deleted shortly.")
-        await ctx.message.delete()
-        await asyncio.sleep(3)
-        await confirmation_message.delete()
+            await self.config.guild(ctx.guild).api_key.set(api_key)
+            confirmation_message = await ctx.send("API key has been set successfully. This message will be deleted shortly.")
+            await ctx.message.delete()
+            await asyncio.sleep(3)
+            await confirmation_message.delete()
+
+        except Exception as e:
+            await ctx.send(f"Error while setting the API key: {str(e)}")
+
+    @cainset.command()
+    async def wipeapikey(self, ctx):
+        """Wipes the stored API Key for OpenAI"""
+        try:
+            current_key = await self.config.guild(ctx.guild).api_key()
+            
+            if current_key is None:
+                await ctx.send("No API key is currently set.")
+                return
+
+            await self.config.guild(ctx.guild).api_key.clear()
+            await ctx.send("The API key has been wiped successfully.")
+        except Exception as e:
+            await ctx.send(f"Error wiping the API key: {str(e)}")
 
     @cainset.command()
     async def channel(self, ctx, channel: discord.TextChannel = None):
