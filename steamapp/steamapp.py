@@ -34,6 +34,11 @@ class SteamAPI(commands.Cog):
                 return data.get('response', {}).get('steamid')
 
     async def get_steamid64(self, ctx, steam):
+        if steam.startswith('https://steamcommunity.com/id/') or steam.startswith('http://steamcommunity.com/id/'):
+            steam = steam.split('/')[-2]
+        elif steam.startswith('https://steamcommunity.com/profiles/') or steam.startswith('http://steamcommunity.com/profiles/'):
+            steam = steam.split('/')[-2]
+
         if steam.isdigit():
             return steam
         elif steam.startswith('STEAM_'):
