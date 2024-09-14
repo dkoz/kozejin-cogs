@@ -17,7 +17,7 @@ class AutoVoice(commands.Cog):
             "channel_owners": {}
         }
         self.config.register_guild(**default_guild)
-        self.bot.created_channels = set()
+        self.created_channels = set()
 
     async def set_channel_owner(self, guild, channel_id, member_id):
         async with self.config.guild(guild).channel_owners() as channel_owners:
@@ -53,40 +53,58 @@ class AutoVoice(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         for guild in self.bot.guilds:
+            channel_owners = await self.config.guild(guild).channel_owners()
+            self.created_channels.update(int(channel_id) for channel_id in channel_owners.keys())
             control_channel_id = await self.config.guild(guild).control_channel_id()
             if control_channel_id:
                 control_channel = self.bot.get_channel(control_channel_id)
-                await self.update_control_message(guild, control_channel)
+                if control_channel:
+                    await self.update_control_message(guild, control_channel)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         trigger_channel_id = await self.config.guild(member.guild).trigger_channel_id()
-
-        if before.channel and before.channel.id in self.bot.created_channels:
-            old_channel = before.channel
-        else:
-            old_channel = None
+        if not trigger_channel_id:
+            return
 
         if after.channel and after.channel.id == trigger_channel_id:
-            new_channel = await member.guild.create_voice_channel(name=f"{member.display_name}'s channel", category=after.channel.category)
-            self.bot.created_channels.add(new_channel.id)
+            channel_owners = await self.config.guild(member.guild).channel_owners()
+            existing_channel_id = None
+            for channel_id_str, owner_id in channel_owners.items():
+                if owner_id == member.id:
+                    existing_channel_id = int(channel_id_str)
+                    break
+
+            if existing_channel_id:
+                existing_channel = member.guild.get_channel(existing_channel_id)
+                if existing_channel:
+                    await member.move_to(existing_channel)
+                    return
+                else:
+                    async with self.config.guild(member.guild).channel_owners() as owners:
+                        del owners[str(existing_channel_id)]
+                    self.created_channels.discard(existing_channel_id)
+
+            new_channel = await member.guild.create_voice_channel(
+                name=f"{member.display_name}'s channel",
+                category=after.channel.category
+            )
+            self.created_channels.add(new_channel.id)
             await self.set_channel_owner(member.guild, new_channel.id, member.id)
             await member.move_to(new_channel)
 
-            if old_channel and len(old_channel.members) == 0:
-                await old_channel.delete()
-                self.bot.created_channels.remove(old_channel.id)
-
-        elif before.channel and len(before.channel.members) == 0 and before.channel.id in self.bot.created_channels:
+        if before.channel and before.channel.id in self.created_channels and len(before.channel.members) == 0:
             await before.channel.delete()
-            self.bot.created_channels.remove(before.channel.id)
+            self.created_channels.remove(before.channel.id)
+            async with self.config.guild(member.guild).channel_owners() as owners:
+                owners.pop(str(before.channel.id), None)
 
     async def is_channel_owner(self, ctx):
-        user_channel = ctx.author.voice.channel if ctx.author.voice else None
-        if user_channel and user_channel.id in self.bot.created_channels:
-            owner_id = await self.get_channel_owner(ctx.guild, user_channel.id)
-            return owner_id == ctx.author.id
-        return False
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            return False
+        user_channel = ctx.author.voice.channel
+        owner_id = await self.get_channel_owner(ctx.guild, user_channel.id)
+        return owner_id == ctx.author.id
 
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -111,12 +129,13 @@ class AutoVoice(commands.Cog):
             await self.update_control_message(ctx.guild, channel)
         else:
             await self.send_control_message(channel, ctx.guild)
-            
+
     @autovoiceset.command()
     async def wipe(self, ctx):
         """Wipe all settings for this guild."""
         await self.config.guild(ctx.guild).clear()
-        await ctx.send(f"All AutoVoice settings for this guild have been wiped.")
+        self.created_channels.clear()
+        await ctx.send("All AutoVoice settings for this guild have been wiped.")
 
     @commands.group(name="autovoice", aliases=["av"], invoke_without_command=True)
     async def autovoice(self, ctx):
@@ -163,5 +182,15 @@ class AutoVoice(commands.Cog):
             user_channel = ctx.author.voice.channel
             await user_channel.edit(user_limit=limit)
             await ctx.send(f"{user_channel.name} now has a limit of {limit} users.")
+        else:
+            await ctx.send("You are not the owner of this channel.")
+
+    @autovoice.command()
+    async def rename(self, ctx, *, name: str):
+        """Rename your personal voice channel. (Can cause rate limiting)"""
+        if await self.is_channel_owner(ctx):
+            user_channel = ctx.author.voice.channel
+            await user_channel.edit(name=name)
+            await ctx.send(f"Your channel has been renamed to {name}.")
         else:
             await ctx.send("You are not the owner of this channel.")
