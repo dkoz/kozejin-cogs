@@ -5,7 +5,7 @@ All cogs on this repo were created for [Jyakku Bot](https://jyakku.com), my pers
 
 ## Installation
 
->These cogs were created for [Red-DiscordBot v3](https://github.com/Cog-Creators/Red-DiscordBot)
+>These cogs were created for [Red-DiscordBot v3.5.13](https://github.com/Cog-Creators/Red-DiscordBot)
 
 **[p] is your prefix**
 
