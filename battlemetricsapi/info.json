@@ -5,7 +5,7 @@
     "short": "Track your game servers.",
     "description": "Track your game servers using BattleMetrics API.",
     "tags": ["battlemetrics", "gameserver", "tracker", "utilities"],
-    "requirements": ["aiohttp"],
+    "requirements": ["aiohttp==3.10.10"],
     "hidden": false,
     "min_bot_version": "3.5.0"
 }

@@ -9,15 +9,18 @@ class BattleMetricsCog(commands.Cog):
         self.config = Config.get_conf(self, identifier=3859612489, force_registration=True)
         default_guild = {
             "servers": [],
-            "bearer_token": ""
+            "bearer_token": "",
+            "debug_channel_id": None
         }
         self.config.register_guild(**default_guild)
         self.update_server_info.start()
 
-    async def send_debug_message(self, message):
-        debug_channel = self.bot.get_channel(CHANNEL_ID)
-        if debug_channel:
-            await debug_channel.send(message)
+    async def send_debug_message(self, guild, message):
+        debug_channel_id = await self.config.guild(guild).debug_channel_id()
+        if debug_channel_id:
+            debug_channel = self.bot.get_channel(debug_channel_id)
+            if debug_channel:
+                await debug_channel.send(message)
 
     @tasks.loop(minutes=5)
     async def update_server_info(self):
@@ -65,7 +68,7 @@ class BattleMetricsCog(commands.Cog):
 
                             channel = self.bot.get_channel(server['discord_channel_id'])
                             if channel is None:
-                                await self.send_debug_message("Channel not found!")
+                                await self.send_debug_message(guild, "Channel not found!")
                                 continue
 
                             if server.get('message_id'):
@@ -80,7 +83,7 @@ class BattleMetricsCog(commands.Cog):
                                 server['message_id'] = message.id
 
                     except Exception as e:
-                        await self.send_debug_message(f"Error updating server info: {e}")
+                        await self.send_debug_message(guild, f"Error updating server info: {e}")
 
     @commands.command()
     @commands.guild_only()
@@ -89,6 +92,14 @@ class BattleMetricsCog(commands.Cog):
         """Sets the BattleMetrics bearer token for the guild."""
         await self.config.guild(ctx.guild).bearer_token.set(token)
         await ctx.send("Bearer token set successfully.")
+        
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_owner()
+    async def setdebug(self, ctx, channel: discord.TextChannel):
+        """Sets the debug channel for logging messages."""
+        await self.config.guild(ctx.guild).debug_channel_id.set(channel.id)
+        await ctx.send(f"Debug channel set to {channel.mention}.")
                         
     @commands.command()
     @commands.guild_only()
