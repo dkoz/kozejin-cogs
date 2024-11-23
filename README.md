@@ -40,6 +40,8 @@ ClonePerms | Cog for cloning permissions, either from one channel to another or 
 StealEmoji | Allows you to upload emojis from one server to another.
 GaiaOnline | Search up Gaia Online profiles and avatars.
 MinecraftAPI | Look up Minecraft player profiles, skins, and capes, or query a game server for information.
+SimpleTickets | Simple ticket system that allows you to create tickets hub with different categories. Uses threads instead of channels.
 
 ## Credits
 [Jintaku](https://github.com/Jintaku) for making original pokedex cog
+[Butts](https://github.com/Butts) for gaia online hash.
