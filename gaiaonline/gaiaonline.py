@@ -1,14 +1,32 @@
 import discord
 from redbot.core import commands, Config
 import aiohttp
-from bs4 import BeautifulSoup
 import urllib.parse
+import binascii
+
+class GaiaAvatar:
+    SALT = 'lksdfou'
+    AVA_CDN = 'https://a1cdn.gaiaonline.com/dress-up/avatar/ava/'
+
+    @staticmethod
+    def abs_crc32_64bit(value):
+        crc = abs(binascii.crc32(value.encode()))
+        if crc & 0x80000000:
+            crc ^= 0xffffffff
+            crc += 1
+        return crc
+
+    @classmethod
+    def to_url(cls, userid):
+        crc = cls.abs_crc32_64bit(str(userid) + cls.SALT)
+        base = '%x%x' % (crc, userid)
+        return f'{cls.AVA_CDN}{base[-2:]}/{base[-4:-2]}/{base}.png'
 
 class GaiaIntegration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=8475638592, force_registration=True)
-        self.config.register_user(gaia_username=None)
+        self.config.register_user(gaia_userid=None)
 
     @commands.guild_only()
     @commands.group(name="gaia", aliases=["go"], invoke_without_command=True)
@@ -18,58 +36,60 @@ class GaiaIntegration(commands.Cog):
 
     @gaia_group.command(name="ava")
     async def gaia_avatar(self, ctx, *, username: str):
-        """Search up an avatar on Gaia Online"""
-        encoded_username = urllib.parse.quote(username)
-        profile_url = f"https://www.gaiaonline.com/profiles/{encoded_username}"
+        """Display an avatar on Gaia Online."""
+        user_id = await self.retrieve_gaiaid(username)
+        if not user_id:
+            await ctx.send(f'No user ID found for "{username}".')
+            return
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(profile_url) as response:
-                if response.status != 200:
-                    await ctx.send(f'Error: Unable to retrieve avatar. HTTP Status: {response.status}')
-                    return
+        avatar_url = GaiaAvatar.to_url(user_id)
+        embed = discord.Embed(title=f'{username}', color=discord.Color.blue())
+        embed.set_image(url=avatar_url)
+        await ctx.send(embed=embed)
 
-                try:
-                    soup = BeautifulSoup(await response.text(), 'html.parser')
-                except Exception as e:
-                    await ctx.send(f'Error parsing HTML: {e}')
-                    return
-
-                avatar_img = None
-                try:
-                    for img in soup.find_all('img', alt=True):
-                        alt_text = img['alt']
-                        if username.lower() in alt_text.lower():
-                            avatar_img = img['src']
-                            break
-                except Exception as e:
-                    await ctx.send(f'Error searching for avatar image: {e}')
-                    return
-
-                if avatar_img:
-                    embed = discord.Embed(title=f'{username}', url=profile_url, color=discord.Color.blue())
-                    embed.set_image(url=avatar_img)
-                    await ctx.send(embed=embed)
-                else:
-                    await ctx.send(f'No avatar found for "{username}".')
-                    
     @gaia_group.command(name="save")
     async def gaia_save(self, ctx, *, username: str):
-        """Save your Gaia Online username."""
-        await self.config.user(ctx.author).gaia_username.set(username)
-        await ctx.send(f"Gaia Online username saved as: {username}")
+        """Save your Gaia Online username and user ID."""
+        user_id = await self.retrieve_gaiaid(username)
+        if not user_id:
+            await ctx.send(f'Error: Could not find a user ID for "{username}".')
+            return
+
+        await self.config.user(ctx.author).gaia_userid.set(user_id)
+        await ctx.send(f"Gaia Online user ID saved for: {username} (ID: {user_id})")
 
     @gaia_group.command(name="me")
     async def gaia_me(self, ctx):
         """Display your saved Gaia Online avatar."""
-        username = await self.config.user(ctx.author).gaia_username()
-        if not username:
+        user_id = await self.config.user(ctx.author).gaia_userid()
+        if not user_id:
             await ctx.send("You haven't set a username yet. Use `.go save [username]` to save it.")
             return
 
-        await self.gaia_avatar(ctx, username=username)
+        avatar_url = GaiaAvatar.to_url(user_id)
+        embed = discord.Embed(title="Your Gaia Avatar", color=discord.Color.blue())
+        embed.set_image(url=avatar_url)
+        await ctx.send(embed=embed)
 
     @gaia_group.command(name="wipe")
     async def gaia_wipe(self, ctx):
-        """Delete your saved Gaia Online username."""
+        """Delete your saved Gaia Online user ID."""
         await self.config.user(ctx.author).clear()
-        await ctx.send("Your avatar has been delete from the database.")
+        await ctx.send("Your Gaia Online user ID has been deleted from the database.")
+
+    async def retrieve_gaiaid(self, username):
+        encoded_username = urllib.parse.quote(username)
+        profile_url = f"https://www.gaiaonline.com/profiles/{encoded_username}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(profile_url, allow_redirects=True) as response:
+                if response.status != 200:
+                    return None
+
+                final_url = str(response.url)
+                try:
+                    user_id = final_url.rstrip('/').split('/')[-1]
+                    if user_id.isdigit():
+                        return int(user_id)
+                except Exception:
+                    return None

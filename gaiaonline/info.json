@@ -5,8 +5,9 @@
     "short": "Display your gaia online avatar!",
     "description": "Display your gaia online avatar and profile!",
     "tags": ["gaiaonline", "utilities"],
-    "requirements": ["aiohttp", "bs4"],
+    "requirements": ["aiohttp"],
     "disabled": false,
     "hidden": false,
-    "min_bot_version": "3.5.0"
+    "min_bot_version": "3.5.0",
+    "min_python_version": [3,10,0]
 }
