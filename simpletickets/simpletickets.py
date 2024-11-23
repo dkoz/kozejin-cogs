@@ -59,36 +59,20 @@ class SimpleTickets(commands.Cog):
                         message = await channel.send(embed=embed, view=view)
                         await self.config.guild(guild).message_id.set(message.id)
 
+    @commands.guild_only()
     @commands.group(
         name="stickets",
-        description="Get list of available ticket commands.",
-        invoke_without_command=True,
+        invoke_without_command=True
     )
     @commands.has_permissions(manage_channels=True)
     async def tickets(self, ctx):
-        prefix = ctx.clean_prefix
-        embed = discord.Embed(
-            title="Ticket System",
-            description="Commands for setting up the ticket system.",
-            color=discord.Color.orange(),
-        )
-        embed.add_field(
-            name="Commands",
-            value=(
-                f"`{prefix}stickets channel` - Set the ticket channel\n"
-                f"`{prefix}stickets logchannel` - Set the log channel\n"
-                f"`{prefix}stickets addcategory` - Add a new ticket category\n"
-                f"`{prefix}stickets removecategory` - Remove a ticket category\n"
-                f"`{prefix}stickets transcript` - Toggle DM on close and transcript generation.\n"
-                f"`{prefix}stickets role` - Add a role to the ticket system\n"
-                f"`{prefix}stickets setup` - Setup guide for the ticket system"
-            ),
-        )
-        await ctx.send(embed=embed)
+        """Simple Tickets Commands"""
+        await ctx.send_help(ctx.command)
 
     @tickets.command(name="setup")
     @commands.has_permissions(manage_channels=True)
     async def setup(self, ctx):
+        """Setup guide for the ticket system."""
         prefix = ctx.clean_prefix
         embed = discord.Embed(
             title="Ticket System Setup Guide",
@@ -137,6 +121,7 @@ class SimpleTickets(commands.Cog):
     async def toggle_transcript(
         self, ctx, dm_on_close: bool, transcript_enabled: bool
     ):
+        """Toggle DM on close and transcript generation. (true/false)"""
         await self.config.guild(ctx.guild).dm_on_close.set(dm_on_close)
         await self.config.guild(ctx.guild).transcript_enabled.set(transcript_enabled)
         await ctx.send(
@@ -146,6 +131,7 @@ class SimpleTickets(commands.Cog):
     @tickets.command(name="addcategory")
     @commands.has_permissions(manage_channels=True)
     async def add_category(self, ctx, *, category_name: str):
+        """Add a category to the ticket system."""
         async with self.config.guild(ctx.guild).categories() as categories:
             if category_name in categories:
                 await ctx.send(f"Category '{category_name}' already exists.")
@@ -157,6 +143,7 @@ class SimpleTickets(commands.Cog):
     @tickets.command(name="removecategory")
     @commands.has_permissions(manage_channels=True)
     async def remove_category(self, ctx, *, category_name: str):
+        """Remove a category from the ticket system."""
         async with self.config.guild(ctx.guild).categories() as categories:
             if category_name in categories:
                 categories.remove(category_name)
@@ -201,6 +188,7 @@ class SimpleTickets(commands.Cog):
     @tickets.command(name="role")
     @commands.has_permissions(manage_channels=True)
     async def add_ticket_roles(self, ctx, *roles: discord.Role):
+        """Add roles to the ticket system."""
         async with self.config.guild(ctx.guild).ticket_roles() as ticket_roles:
             for role in roles:
                 if role.id not in ticket_roles:
@@ -211,6 +199,7 @@ class SimpleTickets(commands.Cog):
     @tickets.command(name="channel")
     @commands.has_permissions(manage_channels=True)
     async def setup_ticket(self, ctx, channel: discord.TextChannel):
+        """Set up the ticket system in a channel."""
         guild = ctx.guild
         await self.config.guild(guild).ticket_channel_id.set(channel.id)
 
@@ -237,6 +226,7 @@ class SimpleTickets(commands.Cog):
     @tickets.command(name="logchannel")
     @commands.has_permissions(manage_channels=True)
     async def setup_log(self, ctx, channel: discord.TextChannel):
+        """Set up the ticket log channel."""
         await self.config.guild(ctx.guild).log_channel_id.set(channel.id)
         await ctx.send(f"Ticket log channel set to {channel.mention}")
 
