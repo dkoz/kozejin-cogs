@@ -1,0 +1,13 @@
+{
+    "author": ["Kozejin"],
+    "install_msg": "Thank you for installing SimpleTickets!\nType `[p]stickets` to get started.",
+    "name": "SimpleTickets",
+    "short": "Create simple tickets for your server.",
+    "description": "Create simple tickets for your server. Users can create tickets, and staff answer them.",
+    "tags": ["tickets", "utilities"],
+    "requirements": [],
+    "disabled": false,
+    "hidden": false,
+    "min_bot_version": "3.5.0",
+    "min_python_version": [3,10,0]
+}
