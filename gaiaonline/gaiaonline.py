@@ -23,12 +23,13 @@ class GaiaAvatar:
         return f'{cls.AVA_CDN}{base[-2:]}/{base[-4:-2]}/{base}{variant}.png'
 
 class AvatarDropdown(discord.ui.Select):
-    def __init__(self, user_id, gaia_username):
+    def __init__(self, user_id, username):
         self.user_id = user_id
-        self.gaia_username = gaia_username  
+        self.username = username  
         options = [
             discord.SelectOption(label="Default", value="default"),
             discord.SelectOption(label="Flipped", value="flip"),
+            discord.SelectOption(label="Bust", value="96x96"),
             discord.SelectOption(label="Full Layout", value="strip"),
         ]
         super().__init__(placeholder="Choose Avatar View", options=options)
@@ -37,20 +38,20 @@ class AvatarDropdown(discord.ui.Select):
         variant = "" if self.values[0] == "default" else f"_{self.values[0]}"
         avatar_url = GaiaAvatar.to_url(self.user_id, variant)
 
-        embed = discord.Embed(title=f'{self.gaia_username}', color=discord.Color.blue())
+        embed = discord.Embed(title=f'{self.username}', color=discord.Color.blue())
         embed.set_image(url=avatar_url)
         await interaction.response.edit_message(embed=embed, view=self.view)
 
 class AvatarView(discord.ui.View):
-    def __init__(self, user_id, gaia_username):
+    def __init__(self, user_id, username):
         super().__init__(timeout=None)
-        self.add_item(AvatarDropdown(user_id, gaia_username))
+        self.add_item(AvatarDropdown(user_id, username))
 
 class GaiaIntegration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=8475638592, force_registration=True)
-        self.config.register_user(gaia_userid=None)
+        self.config.register_user(gaia_userid=None, gaia_username=None)
 
     @commands.guild_only()
     @commands.group(name="gaia", aliases=["go"], invoke_without_command=True)
@@ -80,19 +81,16 @@ class GaiaIntegration(commands.Cog):
             return
 
         await self.config.user(ctx.author).gaia_userid.set(user_id)
+        await self.config.user(ctx.author).gaia_username.set(username)
         await ctx.send(f"Gaia Online user ID saved for: {username} (ID: {user_id})")
 
     @gaia_group.command(name="me")
     async def gaia_me(self, ctx):
         """Display your saved Gaia Online avatar."""
         user_id = await self.config.user(ctx.author).gaia_userid()
-        if not user_id:
-            await ctx.send("You haven't set a username yet. Use `.go save [username]` to save it.")
-            return
-
         username = await self.config.user(ctx.author).gaia_username()
-        if not username:
-            await ctx.send("Your saved Gaia username is missing. Use `.go save [username]` again.")
+        if not user_id or not username:
+            await ctx.send("You haven't set a username yet. Use `.go save [username]` to save it.")
             return
 
         avatar_url = GaiaAvatar.to_url(user_id)
