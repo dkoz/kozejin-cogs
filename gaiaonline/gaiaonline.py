@@ -28,18 +28,19 @@ class AvatarDropdown(discord.ui.Select):
         self.user_id = user_id
         self.username = username
         options = [
-            discord.SelectOption(label="Default", value=""),
-            discord.SelectOption(label="Flipped", value="_flip"),
-            discord.SelectOption(label="Full Layout", value="_strip"),
+            discord.SelectOption(label="Default", value="default"),
+            discord.SelectOption(label="Flipped", value="flip"),
+            discord.SelectOption(label="Full Layout", value="strip"),
         ]
         super().__init__(placeholder="Choose Avatar View", options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        avatar_url = GaiaAvatar.to_url(self.user_id, self.values[0])
+        variant = "" if self.values[0] == "default" else f"_{self.values[0]}"
+        avatar_url = GaiaAvatar.to_url(self.user_id, variant)
+        
         embed = discord.Embed(title=f'{self.username}', color=discord.Color.blue())
         embed.set_image(url=avatar_url)
         await interaction.response.edit_message(embed=embed, view=self.view)
-
 
 class AvatarView(discord.ui.View):
     def __init__(self, user_id, username):
