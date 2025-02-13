@@ -249,7 +249,7 @@ class SimpleTickets(commands.Cog):
             counter = await self.config.guild(guild).ticket_counter()
             thread_name = f"ticket-{counter}-{member.display_name}"
             thread = await ticket_channel.create_thread(
-                name=thread_name, auto_archive_duration=60
+                name=thread_name, auto_archive_duration=4320
             )
             await self.config.guild(guild).ticket_counter.set(counter + 1)
 
@@ -263,7 +263,7 @@ class SimpleTickets(commands.Cog):
             )
 
             embed = discord.Embed(
-                title="Your Ticket",
+                title=f"{category} Ticket",
                 description="Support will be with you shortly. Click the button to close this ticket.",
             )
             embed.add_field(
