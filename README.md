@@ -29,7 +29,6 @@ Now install the cog you want to use.
 Cog | Description
 --- | ---
 AutoVoice | Creates and manages voice channels automatically when joining a specific channel.
-BattleMetricsAPI | Track your game servers, access remote rcon, and more from the BattleMetrics API.
 CloneTracker | Track Diablo Clone/Uber Diablo
 Pokedex | Search for your favorite pokemon, movesets or item info.
 Deckard Cain | Chat with Deckard Cain on ChatGPT
@@ -43,5 +42,5 @@ MinecraftAPI | Look up Minecraft player profiles, skins, and capes, or query a g
 SimpleTickets | Simple ticket system that allows you to create tickets hub with different categories. Uses threads instead of channels.
 
 ## Credits
-[Jintaku](https://github.com/Jintaku) for making original pokedex cog
-[Butts](https://github.com/Butts) for gaia online hash.
+- [Jintaku](https://github.com/Jintaku) for making original pokedex cog.
+- [Butts](https://github.com/Butts) for gaia online hash.
