@@ -17,10 +17,35 @@ class GaiaAvatar:
         return crc
 
     @classmethod
-    def to_url(cls, userid):
+    def to_url(cls, userid, variant=""):
         crc = cls.abs_crc32_64bit(str(userid) + cls.SALT)
         base = '%x%x' % (crc, userid)
-        return f'{cls.AVA_CDN}{base[-2:]}/{base[-4:-2]}/{base}.png'
+        return f'{cls.AVA_CDN}{base[-2:]}/{base[-4:-2]}/{base}{variant}.png'
+
+
+class AvatarDropdown(discord.ui.Select):
+    def __init__(self, user_id, username):
+        self.user_id = user_id
+        self.username = username
+        options = [
+            discord.SelectOption(label="Default", value=""),
+            discord.SelectOption(label="Flipped", value="_flip"),
+            discord.SelectOption(label="Full Layout", value="_strip"),
+        ]
+        super().__init__(placeholder="Choose Avatar View", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        avatar_url = GaiaAvatar.to_url(self.user_id, self.values[0])
+        embed = discord.Embed(title=f'{self.username}', color=discord.Color.blue())
+        embed.set_image(url=avatar_url)
+        await interaction.response.edit_message(embed=embed, view=self.view)
+
+
+class AvatarView(discord.ui.View):
+    def __init__(self, user_id, username):
+        super().__init__(timeout=None)
+        self.add_item(AvatarDropdown(user_id, username))
+
 
 class GaiaIntegration(commands.Cog):
     def __init__(self, bot):
@@ -45,7 +70,7 @@ class GaiaIntegration(commands.Cog):
         avatar_url = GaiaAvatar.to_url(user_id)
         embed = discord.Embed(title=f'{username}', color=discord.Color.blue())
         embed.set_image(url=avatar_url)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, view=AvatarView(user_id, username))
 
     @gaia_group.command(name="save")
     async def gaia_save(self, ctx, *, username: str):
@@ -69,7 +94,7 @@ class GaiaIntegration(commands.Cog):
         avatar_url = GaiaAvatar.to_url(user_id)
         embed = discord.Embed(title="Your Gaia Avatar", color=discord.Color.blue())
         embed.set_image(url=avatar_url)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, view=AvatarView(user_id, ctx.author.display_name))
 
     @gaia_group.command(name="wipe")
     async def gaia_wipe(self, ctx):
