@@ -15,7 +15,7 @@ class SteamAPI(commands.Cog):
     Then enable the app commands using `[p]slash enablecog steamapp` and `[p]slash sync`.
     You can also enable specific commands; Example: `[p]slash enable steamprofile`."""
 
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def __init__(self, bot):
         self.bot = bot
@@ -50,7 +50,7 @@ class SteamAPI(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def setsteamapikey(self, ctx, key: str):
-        """Set the Steam API key for this guild (Server Owner Only)"""
+        """Set the Steam API key for this bot (Bot Owner Only)."""
         
         if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
             await ctx.send("I do not have permissions to delete messages in this channel.")
@@ -58,10 +58,22 @@ class SteamAPI(commands.Cog):
 
         await self.config.steam_api_key.set(key)
         confirmation_message = await ctx.send("Steam API key has been set for this bot.")
-        await ctx.message.delete()
+        
+        try:
+            await ctx.message.delete()
+        except discord.NotFound:
+            pass
+        except discord.Forbidden:
+            await ctx.send("I do not have permission to delete messages.", delete_after=5)
 
         await asyncio.sleep(5)
-        await confirmation_message.delete()
+        
+        try:
+            await confirmation_message.delete()
+        except discord.NotFound:
+            pass
+        except discord.Forbidden:
+            await ctx.send("I do not have permission to delete messages.", delete_after=5)
         
     @app_commands.command(description="Set the Steam API key.")
     @app_commands.guild_only()
@@ -78,6 +90,7 @@ class SteamAPI(commands.Cog):
             await interaction.followup.send(str(e), ephemeral=True)
 
     @app_commands.command(description="Search for user profiles on the Steam database.")
+    @app_commands.describe(steam="SteamID64, SteamID, or custom URL.")
     async def steamprofile(self, interaction: discord.Interaction, steam: str):
         """Search for user profiles on the steam database."""
         STEAM_API_KEY = await self.config.steam_api_key()
@@ -141,6 +154,7 @@ class SteamAPI(commands.Cog):
             await interaction.response.send_message("Unable to fetch the player information.", ephemeral=True)
             
     @app_commands.command(description="Search for games on the Steam database.")
+    @app_commands.describe(game="Name of the game.")
     async def steamgame(self, interaction: discord.Interaction, game: str):
         """Search for games on the steam database."""
         url = f"https://store.steampowered.com/api/storesearch/?cc=us&l=en&term={game}"
